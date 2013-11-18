@@ -2,6 +2,6 @@ sbtPlugin := true
 
 organization := "com.typesafe"
 
-name := "web-sbt"
+name := "sbt-web"
 
 version := "1.0.0-SNAPSHOT"
