@@ -37,8 +37,8 @@ object WebPlugin extends sbt.Plugin {
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
   }
 
-  private def locateSources(sourceDirectory: File, includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
-    (sourceDirectory ** (includeFilter -- excludeFilter)).get
+  private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
+    (sourceDirectories ** (includeFilter -- excludeFilter)).get
 
   import WebKeys._
 
@@ -52,11 +52,12 @@ object WebPlugin extends sbt.Plugin {
 
     jsSource in Assets := (sourceDirectory in Assets).value / "js",
     jsSource in AssetsTest := (sourceDirectory in Test).value / "js",
-
+    unmanagedSourceDirectories in Assets := Seq((jsSource in Assets).value),
+    unmanagedSourceDirectories in AssetsTest := Seq((jsSource in AssetsTest).value),
     includeFilter in Assets := GlobFilter("*.js"),
     includeFilter in AssetsTest := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
-    unmanagedSources in Assets <<= (jsSource in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
-    unmanagedSources in AssetsTest <<= (jsSource in AssetsTest, includeFilter in AssetsTest, excludeFilter in AssetsTest) map locateSources,
+    unmanagedSources in Assets <<= (unmanagedSourceDirectories in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
+    unmanagedSources in AssetsTest <<= (unmanagedSourceDirectories in AssetsTest, includeFilter in AssetsTest, excludeFilter in AssetsTest) map locateSources,
 
     resourceManaged in Assets := target.value / "public",
     resourceManaged in AssetsTest := target.value / "public-test"
