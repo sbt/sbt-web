@@ -34,6 +34,8 @@ object WebPlugin extends sbt.Plugin {
     val Assets = config("web-assets")
     val AssetsTest = config("web-assets-test")
     val jsSource = SettingKey[File]("web-js-source", "The main source directory for JavaScript.")
+    val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of regular js files.")
+    val jsTestFilter = SettingKey[FileFilter]("web-js-test-filter", "The file extension of test js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
   }
 
@@ -54,8 +56,10 @@ object WebPlugin extends sbt.Plugin {
     jsSource in AssetsTest := (sourceDirectory in Test).value / "js",
     unmanagedSourceDirectories in Assets := Seq((jsSource in Assets).value),
     unmanagedSourceDirectories in AssetsTest := Seq((jsSource in AssetsTest).value),
-    includeFilter in Assets := GlobFilter("*.js"),
-    includeFilter in AssetsTest := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    jsFilter := GlobFilter("*.js"),
+    jsTestFilter := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    includeFilter in Assets := jsFilter.value,
+    includeFilter in AssetsTest := jsTestFilter.value,
     unmanagedSources in Assets <<= (unmanagedSourceDirectories in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
     unmanagedSources in AssetsTest <<= (unmanagedSourceDirectories in AssetsTest, includeFilter in AssetsTest, excludeFilter in AssetsTest) map locateSources,
 
