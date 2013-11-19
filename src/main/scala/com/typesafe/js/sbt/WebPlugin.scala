@@ -4,20 +4,37 @@ import sbt._
 import sbt.Keys._
 
 /**
- * Adds settings concerning themselves with web things to SBT
+ * Adds settings concerning themselves with web things to SBT. Here is the directory structure that we need to
+ * support:
+ * {{{
+ *   + src
+ *   --+ assets
+ *   ----+ js
+ *   ----+ css
+ *   --+ test
+ *   ----+ js
+ *   ----+ css
+ *
+ *   + target
+ *   --+ public
+ *   ----+ js
+ *   ----+ css
+ *   --+ public-test
+ *   ----+ js
+ *   ----+ css
+ * }}}
+ *
+ * The plugin introduces the notion of "assets" to sbt. Assets are public resources that are indended for client-side
+ * consumption i.e. to be consumed by a browser. This is distinct from sbt's existing notion of "resources" as
+ * project resources are generally not made public by a web server. The name "assets" heralds from Rails.
  */
 object WebPlugin extends sbt.Plugin {
 
   object WebKeys {
-    val Web = config("web")
-    val WebTest = config("web-test")
+    val Assets = config("web-assets")
+    val AssetsTest = config("web-assets-test")
     val jsSource = SettingKey[File]("web-js-source", "The main source directory for JavaScript.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
-  }
-
-  private def filterSources(sources: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] = {
-    val filter = includeFilter -- excludeFilter
-    sources.filter(filter.accept)
   }
 
   private def locateSources(sourceDirectory: File, includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
@@ -30,26 +47,18 @@ object WebPlugin extends sbt.Plugin {
   )
 
   override def projectSettings: Seq[Setting[_]] = super.projectSettings ++ Seq(
-    includeFilter in Web := GlobFilter("*.js"),
-    includeFilter in WebTest := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    sourceDirectory in Assets := baseDirectory.value / "src" / "assets",
+    sourceDirectory in AssetsTest := (sourceDirectory in Test).value,
 
-    // jsSource is just a directory that allows you to layout your project nicely, anything in it gets added to the
-    // resources task.
-    jsSource in Compile := (sourceDirectory in Compile).value / "js",
-    jsSource in Test := (sourceDirectory in Test).value / "js",
-    unmanagedResources in Compile <++= (jsSource in Compile, includeFilter in(Compile, unmanagedResources), excludeFilter in(Compile, unmanagedResources)) map locateSources,
-    unmanagedResources in Test <++= (jsSource in Test, includeFilter in(Test, unmanagedResources), excludeFilter in(Test, unmanagedResources)) map locateSources,
+    jsSource in Assets := (sourceDirectory in Assets).value / "js",
+    jsSource in AssetsTest := (sourceDirectory in Test).value / "js",
 
-    // The actual javascript sources come from whatever is in resources
-    unmanagedSources in Web <<= (unmanagedResources in Compile, includeFilter in Web, excludeFilter in Web) map filterSources,
-    managedSources in Web <<= (managedResources in Compile, includeFilter in Web, excludeFilter in Web) map filterSources,
-    unmanagedSources in WebTest <<= (unmanagedResources in Test, includeFilter in WebTest, excludeFilter in WebTest) map filterSources,
-    managedSources in WebTest <<= (managedResources in Test, includeFilter in WebTest, excludeFilter in WebTest) map filterSources,
-    sources in Web <<= (unmanagedSources in Web, managedSources in Web) map (_ ++ _),
-    sources in WebTest <<= (unmanagedSources in WebTest, managedSources in WebTest) map (_ ++ _),
+    includeFilter in Assets := GlobFilter("*.js"),
+    includeFilter in AssetsTest := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    unmanagedSources in Assets <<= (jsSource in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
+    unmanagedSources in AssetsTest <<= (jsSource in AssetsTest, includeFilter in AssetsTest, excludeFilter in AssetsTest) map locateSources,
 
-    // The class directory in the web scope is useful to describe where publically available resources should be placed e.g.
-    // the result of a less compilation should copied into this target.
-    classDirectory in Web := (classDirectory in Compile).value / "public"
+    resourceManaged in Assets := target.value / "public",
+    resourceManaged in AssetsTest := target.value / "public-test"
   )
 }

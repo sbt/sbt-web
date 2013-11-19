@@ -1,4 +1,4 @@
-web-sbt
-======
+sbt-web
+=======
 
 Web concerns for sbt
