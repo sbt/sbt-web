@@ -4,20 +4,21 @@ import sbt._
 import sbt.Keys._
 
 /**
- * Adds settings concerning themselves with web things to SBT. Here is the directory structure described by this plugin:
+ * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
+ * showing relevant sbt settings:
  *
  * {{{
  *   + src
  *   --+ main
  *   ----+ assets .....(sourceDirectory in Assets)
- *   ------+ js .......(jsSource in Assets)
+ *   ------+ js
  *   ----+ public .....(resourceDirectory in Assets)
  *   ------+ css
  *   ------+ images
  *   ------+ js
  *   --+ test
  *   ----+ assets .....(sourceDirectory in TestAssets)
- *   ------+ js .......(jsSource in TestAssets)
+ *   ------+ js
  *   ----+ public .....(resourceDirectory in TestAssets)
  *   ------+ css
  *   ------+ images
@@ -43,24 +44,35 @@ import sbt.Keys._
  * In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
  * files become public. For example a coffeescript plugin would use files from "unmanagedSources in Assets" and produce them to
  * a "jsDirName" inside "resourceManaged in Assets".
+ *
+ * All assets be them subject to processing or static in nature, will be copied to the resourceManaged destinations.
+ *
+ * How files are organised within "assets" or "public" is subject to the taste of the developer, their team and
+ * conventions at large.
  */
+
 object WebPlugin extends sbt.Plugin {
 
   object WebKeys {
     val Assets = config("web-assets")
     val TestAssets = config("web-assets-test")
     val jsDirName = SettingKey[String]("web-js-dir", "The name of JavaScript directories.")
-    val jsSource = SettingKey[File]("web-js-source", "The main source directory for JavaScript.")
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of regular js files.")
     val jsTestFilter = SettingKey[FileFilter]("web-js-test-filter", "The file extension of test js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
   }
 
-  private def copyFiles(source: File, target: File): Seq[(File, File)] = {
+  private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
     import scala.language.postfixOps
-    val sources = (PathFinder(source) ***) x Path.rebase(source, target)
-    IO.copy(sources)
-    sources
+
+    val copyDescs = for {
+      source: File <- sources
+    } yield {
+      val copyDesc = (PathFinder(source) ***) x Path.rebase(source, target)
+      IO.copy(copyDesc)
+      copyDesc
+    }
+    copyDescs.flatten
   }
 
   private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
@@ -76,11 +88,8 @@ object WebPlugin extends sbt.Plugin {
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
 
-    jsDirName := "js",
-    jsSource in Assets := (sourceDirectory in Assets).value / jsDirName.value,
-    jsSource in TestAssets := (sourceDirectory in Test).value / jsDirName.value,
-    unmanagedSourceDirectories in Assets := Seq((jsSource in Assets).value),
-    unmanagedSourceDirectories in TestAssets := Seq((jsSource in TestAssets).value),
+    unmanagedSourceDirectories in Assets := Seq((sourceDirectory in Assets).value),
+    unmanagedSourceDirectories in TestAssets := Seq((sourceDirectory in TestAssets).value),
     jsFilter := GlobFilter("*.js"),
     jsTestFilter := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
     includeFilter in Assets := jsFilter.value,
@@ -92,9 +101,13 @@ object WebPlugin extends sbt.Plugin {
     resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
     resourceManaged in Assets := target.value / "public",
     resourceManaged in TestAssets := target.value / "public-test",
-    copyResources in Assets <<= (resourceDirectory in Assets, resourceManaged in Assets) map copyFiles,
+
+    resourceDirectories in Assets := Seq((sourceDirectory in Assets).value, (resourceDirectory in Assets).value),
+    resourceDirectories in TestAssets := Seq((sourceDirectory in TestAssets).value, (resourceDirectory in TestAssets).value),
+
+    copyResources in Assets <<= (resourceDirectories in Assets, resourceManaged in Assets) map copyFiles,
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
-    copyResources in TestAssets <<= (resourceDirectory in TestAssets, resourceManaged in TestAssets) map copyFiles,
+    copyResources in TestAssets <<= (resourceDirectories in TestAssets, resourceManaged in TestAssets) map copyFiles,
     copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets)
   )
 }
