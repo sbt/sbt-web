@@ -63,16 +63,13 @@ object WebPlugin extends sbt.Plugin {
   }
 
   private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
-    import scala.language.postfixOps
-
-    val copyDescs = for {
+    val copyDescs: Seq[(File, File)] = (for {
       source: File <- sources
     } yield {
-      val copyDesc = (PathFinder(source) ***) x Path.rebase(source, target)
-      IO.copy(copyDesc)
-      copyDesc
-    }
-    copyDescs.flatten
+      (source ** "*") filter (!_.isDirectory) x Path.rebase(source, target)
+    }).flatten
+    IO.copy(copyDescs)
+    copyDescs
   }
 
   private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
