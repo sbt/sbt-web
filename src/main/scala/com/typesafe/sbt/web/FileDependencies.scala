@@ -65,8 +65,7 @@ object ModifiedFiles extends FileGraphTransformer[immutable.Seq[File]]({
     // Build a graph of nodes that have actually been modified since we last processed.
     val modifiedLastJsSourceGraph =
       existingLastJsSourceGraph
-        .nodes
-        .flatMap(x => x.incoming)
+        .edges
         .filter(x => x._1.lastModified > x._2.lastModified)
 
     // Update the old graph with a union of the new unmanaged sources along with their target folder
