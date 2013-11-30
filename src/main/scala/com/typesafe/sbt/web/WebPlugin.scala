@@ -1,4 +1,4 @@
-package com.typesafe.js.sbt
+package com.typesafe.sbt.web
 
 import sbt._
 import sbt.Keys._

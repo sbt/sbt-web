@@ -8,6 +8,12 @@ version := "1.0.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
+libraryDependencies ++= Seq(
+  "com.assembla.scala-incubator" %% "graph-core" % "1.7.0",
+  "org.specs2" %% "specs2" % "2.2.2" % "test",
+  "junit" % "junit" % "4.11" % "test"
+  )
+
 publishTo := {
     val isSnapshot = version.value.contains("-SNAPSHOT")
     val scalasbt = "http://repo.scala-sbt.org/scalasbt/"
