@@ -4,91 +4,104 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.mutable.Specification
 import java.io.File
-import sbt.GlobFilter
 import scalax.collection.Graph
-import scalax.collection.GraphEdge.DiEdge
-import scalax.collection.GraphPredef._
+import scalax.collection.edge.Implicits._
+import scalax.collection.edge.LDiEdge
 
 @RunWith(classOf[JUnitRunner])
 class FileDependenciesSpec extends Specification {
 
-  def createTempJsFile(prefix: String): File = {
-    val f = File.createTempFile(prefix, ".js")
+  def createTempFile(prefix: String): File = {
+    val f = File.createTempFile(prefix, ".")
     f.deleteOnExit()
     f
   }
 
   "file dependencies" should {
     "return all new files as modified given an empty graph" in {
-      val unmanagedSource = createTempJsFile("source")
-      val unmanagedSources = Seq(unmanagedSource)
-      val jsFile = GlobFilter("*.js")
-      val targetResource = createTempJsFile("target")
-      val copiedResources = Seq((unmanagedSource, targetResource))
-      val lastJsSourceGraph = Graph[File, DiEdge]()
+      val unmanagedSource = createTempFile("source")
+      val targetResource = createTempFile("target")
 
-      val (newJsSourceGraph, modifiedJsSources) = ModifiedFiles(
-        new PendingFileGraph(lastJsSourceGraph, unmanagedSources, jsFile, copiedResources))
+      val (fg, modifiedSources) = ModifiedFiles(
+        new PendingFileGraph(
+          "xyz",
+          Graph[File, LDiEdge](),
+          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        )
+      )
 
-      newJsSourceGraph.g.graphSize must_== 1
-      newJsSourceGraph.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
-      modifiedJsSources.size must_== 1
+      fg.g.graphSize must_== 1
+      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      modifiedSources.size must_== 1
     }
 
     "return all existing files as unmodified given a previous graph" in {
-      val unmanagedSource = createTempJsFile("source")
-      val unmanagedSources = Seq(unmanagedSource)
-      val jsFile = GlobFilter("*.js")
-      val targetResource = createTempJsFile("target")
-      val copiedResources = Seq((unmanagedSource, targetResource))
-      val lastJsSourceGraph = Graph(unmanagedSource ~> targetResource)
+      val unmanagedSource = createTempFile("source")
+      val targetResource = createTempFile("target")
 
-      val (newJsSourceGraph, modifiedJsSources) = ModifiedFiles(
-        new PendingFileGraph(lastJsSourceGraph, unmanagedSources, jsFile, copiedResources))
+      val (fg, modifiedSources) = ModifiedFiles(
+        new PendingFileGraph(
+          "xyz",
+          Graph((unmanagedSource ~+> targetResource)("xyz")),
+          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        )
+      )
 
-      newJsSourceGraph.g.graphSize must_== 1
-      newJsSourceGraph.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
-      modifiedJsSources.size must_== 0
+      fg.g.graphSize must_== 1
+      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      modifiedSources.size must_== 0
     }
 
     "return one existing file as modified given a previous graph with a removed file" in {
-      val unmanagedSource = createTempJsFile("source")
-      val unmanagedSources = Seq(unmanagedSource)
-      val jsFile = GlobFilter("*.js")
-      val targetResource = createTempJsFile("target")
-      val copiedResources = Seq((unmanagedSource, targetResource))
-      val deletedUnmanagedSource = createTempJsFile("source")
-      val deletedTargetResource = createTempJsFile("target")
-      val lastJsSourceGraph = Graph(deletedUnmanagedSource ~> deletedTargetResource)
+      val unmanagedSource = createTempFile("source")
+      val targetResource = createTempFile("target")
+      val deletedUnmanagedSource = createTempFile("source")
+      val deletedTargetResource = createTempFile("target")
 
-      val (newJsSourceGraph, modifiedJsSources) = ModifiedFiles(
-        new PendingFileGraph(lastJsSourceGraph, unmanagedSources, jsFile, copiedResources))
+      val (fg, modifiedSources) = ModifiedFiles(
+        new PendingFileGraph(
+          "xyz",
+          Graph((deletedUnmanagedSource ~+> deletedTargetResource)("xyz")),
+          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        )
+      )
 
-      newJsSourceGraph.g.graphSize must_== 1
-      newJsSourceGraph.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
-      modifiedJsSources.size must_== 1
+      fg.g.graphSize must_== 1
+      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      modifiedSources.size must_== 1
     }
 
-    "return one existing file as modified given a previous graph" in {
-      val unmanagedSource1 = createTempJsFile("source")
-      val unmanagedSource2 = createTempJsFile("source")
-      val unmanagedSources = Seq(unmanagedSource1, unmanagedSource2)
-      val jsFile = GlobFilter("*.js")
-      val targetResource1 = createTempJsFile("target")
-      targetResource1.setLastModified(unmanagedSource1.lastModified() - 1)
-      val targetResource2 = createTempJsFile("target")
-      targetResource2.setLastModified(unmanagedSource2.lastModified() + 1)
-      val copiedResources = Seq((unmanagedSource1, targetResource1), (unmanagedSource2, targetResource2))
-      val lastJsSourceGraph = Graph(unmanagedSource1 ~> targetResource1, unmanagedSource2 ~> targetResource2)
+    "return one existing file as modified given a previous graph along with unrelated nodes given their labels" in {
+      val unmanagedSource1 = createTempFile("source")
+      val targetResource1 = createTempFile("target")
+      val targetResource1_1 = createTempFile("target")
+      val unmanagedSource2 = createTempFile("source")
+      val targetResource2 = createTempFile("target")
+      val unmanagedSource3 = createTempFile("source")
+      val targetResource3 = createTempFile("target")
 
-      val (newJsSourceGraph, modifiedJsSources) = ModifiedFiles(
-        new PendingFileGraph(lastJsSourceGraph, unmanagedSources, jsFile, copiedResources))
+      val (fg, modifiedSources) = ModifiedFiles(
+        new PendingFileGraph(
+          "xyz",
+          Graph(
+            (unmanagedSource1 ~+> targetResource1_1)("xyz"),
+            (unmanagedSource2 ~+> targetResource2)("xyz"),
+            (unmanagedSource2 ~+> targetResource2)("abc"),
+            (unmanagedSource3 ~+> targetResource3)("abc")
+          ),
+          Graph(
+            (unmanagedSource1 ~+> targetResource1)("xyz"),
+            (unmanagedSource2 ~+> targetResource2)("xyz")
+          )
+        )
+      )
 
-      newJsSourceGraph.g.graphSize must_== 2
-      newJsSourceGraph.g.get(unmanagedSource1).diSuccessors must_== Set(targetResource1)
-      newJsSourceGraph.g.get(unmanagedSource2).diSuccessors must_== Set(targetResource2)
-      modifiedJsSources.size must_== 1
-      modifiedJsSources(0) must_== unmanagedSource1
+      fg.g.graphSize must_== 3
+      fg.g.edges.size must_== 3
+      fg.g.get(unmanagedSource1).diSuccessors must_== Set(targetResource1)
+      fg.g.get(unmanagedSource2).diSuccessors must_== Set(targetResource2)
+      modifiedSources.size must_== 1
+      modifiedSources(0) must_== unmanagedSource1
     }
   }
 }

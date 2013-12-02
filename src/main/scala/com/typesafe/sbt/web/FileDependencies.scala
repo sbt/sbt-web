@@ -1,15 +1,15 @@
 package com.typesafe.sbt.web
 
 import scalax.collection.Graph
-import scalax.collection.GraphEdge.DiEdge
 import scala.collection.immutable
 import sbt._
 import scala.language.higherKinds
+import scalax.collection.edge.LDiEdge
 
 /**
  * State that represents a directed graph of files.
  */
-class FileGraph(val g: Graph[File, DiEdge])
+class FileGraph(val g: Graph[File, LDiEdge])
 
 /**
  * A functional state transformer for transforming directed file graphs.
@@ -27,62 +27,35 @@ class FileGraphTransformer[A](a: FileGraph => (FileGraph, A)) {
 
 /**
  * State that represents files which are potentially effected given changes to the
- * file system.
+ * file system. The file mappings represent a pairing where the first member is the
+ * source file, and the second member is an associated file.
  */
 class PendingFileGraph(
-                        g: Graph[File, DiEdge],
-                        val unmanagedSources: Seq[File],
-                        val jsFilter: FileFilter,
-                        val copiedResources: Seq[(File, File)]
+                        val label: String,
+                        g: Graph[File, LDiEdge],
+                        val ng: Graph[File, LDiEdge]
                         ) extends FileGraph(g)
 
 /**
  * Modified Files is a state transformer that is able to to receive a graph of
  * files and produce a sequence of files representing some delta between the graphs
- * transforming from and to. That delta is expressed through a function during the
- * transformer's construction.
+ * transforming from and to.
  */
 object ModifiedFiles extends FileGraphTransformer[immutable.Seq[File]]({
-  case s: PendingFileGraph =>
+  case pfg: PendingFileGraph =>
 
-    // Build an index for convenient access to the source->target mapping.
-    val copiedResourcesIndex = s.copiedResources.toMap
+    val unmodifiedSources =
+      pfg.g.filter(pfg.g.having(node = n => pfg.ng.contains(n))) ++
+        pfg.g.edges.filterNot(e => e.label == pfg.label)
 
-    // Build a graph of nodes representing js source files that have no associated target js files. This graph
-    // represents all js sources files that we should be looking at.
-    val unmanagedJsSources = Graph.from[File, DiEdge]((s.unmanagedSources ** s.jsFilter).get, Nil)
-
-    // Build a graph of nodes representing js source files that we have not seen on previous runs.
-    val newUnmanagedJsSources = unmanagedJsSources -- s.g
-
-    // Conditionally eliminate nodes from the last time we processed them. Nodes representing the source js file
-    // are checked to see whether they still exist as part of unmanaged sources.
-    val existingLastJsSourceGraph =
-      s.g.filter(
-        s.g.having(edge = e => copiedResourcesIndex.contains(e._1))
+    val newSources =
+      pfg.ng.filterNot(
+        pfg.ng.having(node = n => unmodifiedSources.contains(n))
       )
 
-    // Build a graph of nodes that have actually been modified since we last processed.
-    val modifiedLastJsSourceGraph =
-      existingLastJsSourceGraph
-        .edges
-        .filter(x => x._1.lastModified > x._2.lastModified)
+    val nextSources = unmodifiedSources ++ newSources
 
-    // Update the old graph with a union of the new unmanaged sources along with their target folder
-    // information.
-    val nextJsSourceGraph =
-      existingLastJsSourceGraph ++
-        Graph.from[File, DiEdge](
-          newUnmanagedJsSources.nodes.map(n => n.value),
-          newUnmanagedJsSources.nodes.map(n => DiEdge(n.value, copiedResourcesIndex.get(n.value).get))
-        )
+    val modifiedSourceFiles = newSources.edges.map(_._1.value).to[immutable.Seq]
 
-    // Determine the sequence of sources that have either been modified or are new to us.
-    val modifiedJsSources =
-      (modifiedLastJsSourceGraph.map(_._1) ++ newUnmanagedJsSources.nodes)
-        .map(n => n.value)
-        .to[immutable.Seq]
-
-    // Return the updated graph along with a sequence of sources that were found to be modified.
-    (new FileGraph(nextJsSourceGraph), modifiedJsSources)
+    (new FileGraph(nextSources), modifiedSourceFiles)
 })
