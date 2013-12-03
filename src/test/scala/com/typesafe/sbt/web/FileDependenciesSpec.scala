@@ -1,9 +1,9 @@
 package com.typesafe.sbt.web
 
+import sbt._
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.mutable.Specification
-import java.io.File
 import scalax.collection.Graph
 import scalax.collection.edge.Implicits._
 import scalax.collection.edge.LDiEdge
@@ -11,97 +11,134 @@ import scalax.collection.edge.LDiEdge
 @RunWith(classOf[JUnitRunner])
 class FileDependenciesSpec extends Specification {
 
-  def createTempFile(prefix: String): File = {
-    val f = File.createTempFile(prefix, ".")
-    f.deleteOnExit()
-    f
-  }
-
-  "file dependencies" should {
+  "source dependencies" should {
     "return all new files as modified given an empty graph" in {
-      val unmanagedSource = createTempFile("source")
-      val targetResource = createTempFile("target")
+      val sourceFile = file("source")
+      val sourceNode: SourceNode = SourceFile(sourceFile)
+      val props = BuildStamp(BuildStamp.digest("someprops"))
 
       val (fg, modifiedSources) = ModifiedFiles(
-        new PendingFileGraph(
-          "xyz",
-          Graph[File, LDiEdge](),
-          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        new AgedSourceFileGraph(
+          Graph[SourceNode, LDiEdge](),
+          Graph((sourceNode ~+> props)("xyz"))
         )
       )
 
+      fg.g.order must_== 2
       fg.g.graphSize must_== 1
-      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      fg.g.get(sourceNode).diSuccessors must_== Set(props)
       modifiedSources.size must_== 1
     }
 
     "return all existing files as unmodified given a previous graph" in {
-      val unmanagedSource = createTempFile("source")
-      val targetResource = createTempFile("target")
+      val sourceFile = file("source")
+      val sourceNode: SourceNode = SourceFile(sourceFile)
+      val props = BuildStamp("someprops")
 
       val (fg, modifiedSources) = ModifiedFiles(
-        new PendingFileGraph(
-          "xyz",
-          Graph((unmanagedSource ~+> targetResource)("xyz")),
-          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        new AgedSourceFileGraph(
+          Graph((sourceNode ~+> props)("xyz")),
+          Graph((sourceNode ~+> props)("xyz"))
         )
       )
 
+      fg.g.order must_== 2
       fg.g.graphSize must_== 1
-      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      fg.g.get(sourceNode).diSuccessors must_== Set(props)
       modifiedSources.size must_== 0
     }
 
     "return one existing file as modified given a previous graph with a removed file" in {
-      val unmanagedSource = createTempFile("source")
-      val targetResource = createTempFile("target")
-      val deletedUnmanagedSource = createTempFile("source")
-      val deletedTargetResource = createTempFile("target")
+      val sourceFile = file("/a/source")
+      val sourceNode: SourceNode = SourceFile(sourceFile)
+      val props = BuildStamp("someprops")
+
+      val deletedSourceFile = file("/b/source")
+      val deletedSourceNode: SourceNode = SourceFile(deletedSourceFile)
+      val deletedProps = BuildStamp("somedeletedprops")
 
       val (fg, modifiedSources) = ModifiedFiles(
-        new PendingFileGraph(
-          "xyz",
-          Graph((deletedUnmanagedSource ~+> deletedTargetResource)("xyz")),
-          Graph((unmanagedSource ~+> targetResource)("xyz"))
+        new AgedSourceFileGraph(
+          Graph((deletedSourceNode ~+> deletedProps)("xyz")),
+          Graph((sourceNode ~+> props)("xyz"))
         )
       )
 
+      fg.g.order must_== 2
       fg.g.graphSize must_== 1
-      fg.g.get(unmanagedSource).diSuccessors must_== Set(targetResource)
+      fg.g.get(sourceNode).diSuccessors must_== Set(props)
       modifiedSources.size must_== 1
     }
 
     "return one existing file as modified given a previous graph along with unrelated nodes given their labels" in {
-      val unmanagedSource1 = createTempFile("source")
-      val targetResource1 = createTempFile("target")
-      val targetResource1_1 = createTempFile("target")
-      val unmanagedSource2 = createTempFile("source")
-      val targetResource2 = createTempFile("target")
-      val unmanagedSource3 = createTempFile("source")
-      val targetResource3 = createTempFile("target")
+      val sourceFile1 = file("/a/source")
+      val sourceNode1: SourceNode = SourceFile(sourceFile1)
+      val props1 = BuildStamp("someprops1")
+      val props1_1 = BuildStamp("someprops1_1")
+
+      val sourceFile2 = file("/b/source")
+      val sourceNode2: SourceNode = SourceFile(sourceFile2)
+      val props2 = BuildStamp("someprops2")
+
+      val sourceFile3 = file("/c/source")
+      val sourceNode3: SourceNode = SourceFile(sourceFile3)
+      val props3 = BuildStamp("someprops3")
 
       val (fg, modifiedSources) = ModifiedFiles(
-        new PendingFileGraph(
-          "xyz",
+        new AgedSourceFileGraph(
           Graph(
-            (unmanagedSource1 ~+> targetResource1_1)("xyz"),
-            (unmanagedSource2 ~+> targetResource2)("xyz"),
-            (unmanagedSource2 ~+> targetResource2)("abc"),
-            (unmanagedSource3 ~+> targetResource3)("abc")
+            (sourceNode1 ~+> props1_1)("xyz"),
+            (sourceNode2 ~+> props2)("xyz"),
+            (sourceNode2 ~+> props2)("abc"),
+            (sourceNode3 ~+> props3)("abc")
           ),
           Graph(
-            (unmanagedSource1 ~+> targetResource1)("xyz"),
-            (unmanagedSource2 ~+> targetResource2)("xyz")
+            (sourceNode1 ~+> props1)("xyz"),
+            (sourceNode2 ~+> props2)("xyz")
           )
         )
       )
 
+      fg.g.order must_== 6
       fg.g.graphSize must_== 3
-      fg.g.edges.size must_== 3
-      fg.g.get(unmanagedSource1).diSuccessors must_== Set(targetResource1)
-      fg.g.get(unmanagedSource2).diSuccessors must_== Set(targetResource2)
+      fg.g.get(sourceNode1).diSuccessors must_== Set(props1)
+      fg.g.get(sourceNode2).diSuccessors must_== Set(props2)
+      fg.g.get(sourceNode3).diSuccessors must_== Set(props3)
       modifiedSources.size must_== 1
-      modifiedSources(0) must_== unmanagedSource1
+      modifiedSources(0) must_== sourceFile1
+    }
+
+    "modify a source file that is depended on by another and determine only the parent" in {
+      val sourceFile1 = file("/a/source")
+      val sourceNode1: SourceNode = SourceFile(sourceFile1)
+      val props1 = BuildStamp("someprops1")
+
+      val sourceFile2 = file("/b/source")
+      val sourceNode2: SourceNode = SourceFile(sourceFile2)
+      val props2 = BuildStamp("someprops2")
+      val props2_1 = BuildStamp("someprops2_1")
+
+      val (fg, modifiedSources) = ModifiedFiles(
+        new AgedSourceFileGraph(
+          Graph(
+            (sourceNode1 ~+> props1)("props"),
+            (sourceNode2 ~+> props2)("props"),
+            (sourceNode1 ~+> sourceNode2)("sources")
+          ),
+          Graph(
+            (sourceNode1 ~+> props1)("props"),
+            (sourceNode2 ~+> props2_1)("props")
+          )
+        )
+      )
+
+      fg.g.order must_== 4
+      fg.g.graphSize must_== 3
+
+      val modifiedPredecessors = fg.modifiedPredecessors(modifiedSources)
+
+      modifiedPredecessors.size must_== 1
+      modifiedPredecessors(0) must_== sourceFile1
     }
   }
 }
