@@ -135,10 +135,10 @@ class FileDependenciesSpec extends Specification {
       fg.g.order must_== 4
       fg.g.graphSize must_== 3
 
-      val modifiedPredecessors = fg.modifiedPredecessors(modifiedSources)
+      val modifiedPredecessors = fg.predecessors(modifiedSources)
 
       modifiedPredecessors.size must_== 1
-      modifiedPredecessors(0) must_== sourceFile1
+      modifiedPredecessors.head must_== sourceFile1
     }
   }
 }

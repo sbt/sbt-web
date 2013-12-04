@@ -42,10 +42,10 @@ object BuildStamp {
  */
 class SourceFileGraph(val g: Graph[SourceNode, LDiEdge]) {
   /**
-   * Conveniently return all source file predecessors of a given sequence of source files.
+   * Conveniently return all distinct source file predecessors of a given sequence of source files.
    */
-  def modifiedPredecessors(modifiedSources: immutable.Seq[File]): immutable.Seq[File] = {
-    modifiedSources.flatMap {
+  def predecessors(sources: immutable.Seq[File]): Set[File] = {
+    sources.flatMap {
       f =>
         g.get(SourceFile(f)).diPredecessors
     }.flatMap {
@@ -54,7 +54,7 @@ class SourceFileGraph(val g: Graph[SourceNode, LDiEdge]) {
           case sf: SourceFile => Some(sf.f)
           case _ => None
         }
-    }
+    }.toSet
   }
 }
 
