@@ -25,7 +25,7 @@ class SourceFileManager(cacheFile: File) {
   /**
    * Given a set of source file/build-stamp tuples, return those that are modified since last time.
    */
-  def updateBuildStamps(sources: immutable.Seq[(File, String)]): immutable.Seq[File] = {
+  def setAndCompareBuildStamps(sources: immutable.Seq[(File, String)]): immutable.Seq[File] = {
     updateGraph(Graph.from(
       Nil,
       sources.map {
@@ -39,9 +39,10 @@ class SourceFileManager(cacheFile: File) {
 
   /**
    * Register a sequence of source file/input tuples where the input represents a
-   * sequence of source files that the corresponding source file depends on.
+   * sequence of source files that the corresponding source file depends on. Return those modified
+   * since last time.
    */
-  def updateInputs(sources: immutable.Seq[(File, immutable.Seq[File])]): immutable.Seq[File] = {
+  def setAndCompareInputs(sources: immutable.Seq[(File, immutable.Seq[File])]): immutable.Seq[File] = {
     updateGraph(Graph.from(
       Nil,
       sources.flatMap {
@@ -70,4 +71,8 @@ class SourceFileManager(cacheFile: File) {
   def save(): Unit = {
 
   }
+}
+
+object SourceFileManager {
+  def apply(cacheFile: File) = new SourceFileManager(cacheFile)
 }
