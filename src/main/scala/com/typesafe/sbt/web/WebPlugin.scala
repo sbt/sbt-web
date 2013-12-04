@@ -2,6 +2,9 @@ package com.typesafe.sbt.web
 
 import sbt._
 import sbt.Keys._
+import akka.actor.{ActorSystem, ActorRefFactory}
+import akka.util.Timeout
+import scala.concurrent.duration._
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -105,6 +108,58 @@ object WebPlugin extends sbt.Plugin {
     copyResources in Assets <<= (resourceDirectories in Assets, resourceManaged in Assets) map copyFiles,
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
     copyResources in TestAssets <<= (resourceDirectories in TestAssets, resourceManaged in TestAssets) map copyFiles,
-    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets)
+    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
+
+    onLoad in Global := (onLoad in Global).value andThen (load),
+    onUnload in Global := (onUnload in Global).value andThen (unload)
+
   )
+
+  // Actor system management and API
+
+  implicit val webActorTimeout = Timeout(5.seconds)
+
+  private val webActorSystemAttrKey = AttributeKey[ActorSystem]("web-actor-system")
+
+  private def load(state: State): State = {
+    state.get(webActorSystemAttrKey).map(as => state).getOrElse {
+      val webActorSystem = withActorClassloader(ActorSystem("sbt-web"))
+      state.put(webActorSystemAttrKey, webActorSystem)
+    }
+  }
+
+  private def unload(state: State): State = {
+    state.get(webActorSystemAttrKey).map {
+      as =>
+        as.shutdown
+        state.remove(webActorSystemAttrKey)
+    }.getOrElse(state)
+  }
+
+  /**
+   * Perform actor related activity with sbt-web's actor system.
+   * @param state The project build state available to the task invoking this.
+   * @param namespace A means by which actors can be namespaced.
+   * @param block The block of code to execute.
+   * @tparam T The expected return type of the block.
+   * @return The return value of the block.
+   */
+  def withActorRefFactory[T](state: State, namespace: String)(block: (ActorRefFactory) => T): T = {
+    // We will get an exception if there is no known actor system - which is a good thing because
+    // there absolutely has to be at this point.
+    block(state.get(webActorSystemAttrKey).get)
+  }
+
+  private def withActorClassloader[A](f: => A): A = {
+    val newLoader = ActorSystem.getClass.getClassLoader
+    val thread = Thread.currentThread
+    val oldLoader = thread.getContextClassLoader
+
+    thread.setContextClassLoader(newLoader)
+    try {
+      f
+    } finally {
+      thread.setContextClassLoader(oldLoader)
+    }
+  }
 }
