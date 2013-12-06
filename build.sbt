@@ -11,9 +11,12 @@ scalaVersion := "2.10.3"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
   "com.assembla.scala-incubator" %% "graph-core" % "1.7.0",
+  "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
   "org.specs2" %% "specs2" % "2.2.2" % "test",
   "junit" % "junit" % "4.11" % "test"
   )
+
+resolvers += Resolver.sonatypeRepo("snapshots")
 
 publishTo := {
     val isSnapshot = version.value.contains("-SNAPSHOT")

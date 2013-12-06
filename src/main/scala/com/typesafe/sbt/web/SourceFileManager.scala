@@ -1,11 +1,13 @@
 package com.typesafe.sbt.web
 
-import sbt.File
+import sbt.{IO, File}
 import scala.collection.immutable
 import scalax.collection.Graph
 import scalax.collection.edge.LDiEdge
+import scala.pickling._
+import binary._
 
-// FIXME:   read the graph and persist it. Develop some tests also.
+// FIXME: Develop some tests also.
 
 /**
  * A source file manager retains durable data across multiple sbt builds and a
@@ -14,7 +16,12 @@ import scalax.collection.edge.LDiEdge
  */
 class SourceFileManager(cacheFile: File) {
 
-  var sourceFileGraph = new SourceFileGraph(Graph.empty[SourceNode, LDiEdge])
+  var sourceFileGraph = if (cacheFile.exists()) {
+//FIXME:    IO.readBytes(cacheFile).unpickle[SourceFileGraph]
+    new SourceFileGraph(Graph[SourceNode, LDiEdge]().empty)
+  } else {
+    new SourceFileGraph(Graph[SourceNode, LDiEdge]().empty)
+  }
 
   private def updateGraph(updateGraph: Graph[SourceNode, LDiEdge]): immutable.Seq[File] = {
     val result = ModifiedFiles(new AgedSourceFileGraph(sourceFileGraph.g, updateGraph))
@@ -69,7 +76,7 @@ class SourceFileManager(cacheFile: File) {
    * Save the graph.
    */
   def save(): Unit = {
-
+   // FIXME: IO.write(cacheFile, sourceFileGraph.pickle.value)
   }
 }
 
