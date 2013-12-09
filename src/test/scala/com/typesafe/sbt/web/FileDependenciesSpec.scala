@@ -123,7 +123,7 @@ class FileDependenciesSpec extends Specification {
           Graph(
             (sourceNode1 ~+> props1)("props"),
             (sourceNode2 ~+> props2)("props"),
-            (sourceNode1 ~+> sourceNode2)("sources")
+            (sourceNode1 ~+> sourceNode2)("inputs")
           ),
           Graph(
             (sourceNode1 ~+> props1)("props"),
