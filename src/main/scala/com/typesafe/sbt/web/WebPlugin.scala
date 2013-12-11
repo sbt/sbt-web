@@ -80,10 +80,8 @@ object WebPlugin extends sbt.Plugin {
   import WebKeys._
 
   override def globalSettings: Seq[Setting[_]] = super.globalSettings ++ Seq(
-    reporter := new LoggerReporter(5, streams.value.log)
-  )
+    reporter := new LoggerReporter(5, streams.value.log),
 
-  override def projectSettings: Seq[Setting[_]] = super.projectSettings ++ Seq(
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
 
