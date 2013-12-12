@@ -1,12 +1,12 @@
-package com.typesafe.sbt.web
+package com.typesafe.web.sbt
 
+import scalax.collection.Graph
+import scalax.collection.edge.Implicits._
+import scalax.collection.edge.LDiEdge
 import sbt._
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.mutable.Specification
-import scalax.collection.Graph
-import scalax.collection.edge.Implicits._
-import scalax.collection.edge.LDiEdge
 
 @RunWith(classOf[JUnitRunner])
 class FileDependenciesSpec extends Specification {

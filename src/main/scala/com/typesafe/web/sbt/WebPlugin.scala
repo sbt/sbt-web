@@ -1,4 +1,4 @@
-package com.typesafe.sbt.web
+package com.typesafe.web.sbt
 
 import sbt._
 import sbt.Keys._
@@ -64,33 +64,23 @@ object WebPlugin extends sbt.Plugin {
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
   }
 
-  private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
-    val copyDescs: Seq[(File, File)] = (for {
-      source: File <- sources
-    } yield {
-      (source ** "*") filter (!_.isDirectory) x Path.rebase(source, target)
-    }).flatten
-    IO.copy(copyDescs)
-    copyDescs
-  }
-
-  private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
-    (sourceDirectories ** (includeFilter -- excludeFilter)).get
-
   import WebKeys._
 
   override def globalSettings: Seq[Setting[_]] = super.globalSettings ++ Seq(
-    reporter := new LoggerReporter(5, streams.value.log)
+    onLoad in Global := (onLoad in Global).value andThen (load),
+    onUnload in Global := (onUnload in Global).value andThen (unload)
   )
 
-  override def projectSettings: Seq[Setting[_]] = super.projectSettings ++ Seq(
+  def webSettings: Seq[Setting[_]] = Seq(
+    reporter := new LoggerReporter(5, streams.value.log),
+
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
 
     unmanagedSourceDirectories in Assets := Seq((sourceDirectory in Assets).value),
     unmanagedSourceDirectories in TestAssets := Seq((sourceDirectory in TestAssets).value),
     jsFilter in Assets := GlobFilter("*.js"),
-    jsFilter in TestAssets  := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
     includeFilter in Assets := (jsFilter in Assets).value,
     includeFilter in TestAssets := (jsFilter in TestAssets).value,
     unmanagedSources in Assets <<= (unmanagedSourceDirectories in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
@@ -107,12 +97,23 @@ object WebPlugin extends sbt.Plugin {
     copyResources in Assets <<= (resourceDirectories in Assets, resourceManaged in Assets) map copyFiles,
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
     copyResources in TestAssets <<= (resourceDirectories in TestAssets, resourceManaged in TestAssets) map copyFiles,
-    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
-
-    onLoad in Global := (onLoad in Global).value andThen (load),
-    onUnload in Global := (onUnload in Global).value andThen (unload)
+    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets)
 
   )
+
+
+  private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
+    (sourceDirectories ** (includeFilter -- excludeFilter)).get
+
+  private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
+    val copyDescs: Seq[(File, File)] = (for {
+      source: File <- sources
+    } yield {
+      (source ** "*") filter (!_.isDirectory) x Path.rebase(source, target)
+    }).flatten
+    IO.copy(copyDescs)
+    copyDescs
+  }
 
   // Actor system management and API
 

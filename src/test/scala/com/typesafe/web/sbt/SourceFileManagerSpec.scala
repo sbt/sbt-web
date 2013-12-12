@@ -1,4 +1,4 @@
-package com.typesafe.sbt.web
+package com.typesafe.web.sbt
 
 import sbt._
 import org.junit.runner.RunWith
