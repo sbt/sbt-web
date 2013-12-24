@@ -5,6 +5,7 @@ import sbt.Keys._
 import akka.actor.{ActorSystem, ActorRefFactory}
 import akka.util.Timeout
 import scala.concurrent.duration._
+import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -57,11 +58,21 @@ import scala.concurrent.duration._
 object WebPlugin extends sbt.Plugin {
 
   object WebKeys {
+    import sbt.KeyRanks._
+
     val Assets = config("web-assets")
     val TestAssets = config("web-assets-test")
     val jsDirName = SettingKey[String]("web-js-dir", "The name of JavaScript directories.")
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
+
+    val extractWebJars = TaskKey[File]("extract-web-jars", "Extract webjars", ATask)
+    val extractWebJarsPath = SettingKey[File]("extract-web-jars-path", "The path to extract WebJars to", ASetting)
+    val extractWebJarsCache = SettingKey[File]("extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
+    val allWebJars = TaskKey[Seq[String]]("all-web-jars", "Discover all WebJars on the classpath", CTask)
+    val includeWebJars = SettingKey[Seq[String]]("include-web-jars", "Include WebJars with the given name", BSetting)
+    val excludeWebJars = SettingKey[Seq[String]]("exclude-web-jars", "Exclude WebJars with the given name", BSetting)
+    val extractWebJarsClassLoader = TaskKey[ClassLoader]("extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
   }
 
   import WebKeys._
@@ -77,30 +88,50 @@ object WebPlugin extends sbt.Plugin {
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
 
-    unmanagedSourceDirectories in Assets := Seq((sourceDirectory in Assets).value),
-    unmanagedSourceDirectories in TestAssets := Seq((sourceDirectory in TestAssets).value),
     jsFilter in Assets := GlobFilter("*.js"),
     jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
-    includeFilter in Assets := (jsFilter in Assets).value,
     includeFilter in TestAssets := (jsFilter in TestAssets).value,
-    unmanagedSources in Assets <<= (unmanagedSourceDirectories in Assets, includeFilter in Assets, excludeFilter in Assets) map locateSources,
-    unmanagedSources in TestAssets <<= (unmanagedSourceDirectories in TestAssets, includeFilter in TestAssets, excludeFilter in TestAssets) map locateSources,
 
     resourceDirectory in Assets := (sourceDirectory in Compile).value / "public",
     resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
     resourceManaged in Assets := target.value / "public",
     resourceManaged in TestAssets := target.value / "public-test",
 
-    resourceDirectories in Assets := Seq((sourceDirectory in Assets).value, (resourceDirectory in Assets).value),
-    resourceDirectories in TestAssets := Seq((sourceDirectory in TestAssets).value, (resourceDirectory in TestAssets).value),
-
-    copyResources in Assets <<= (resourceDirectories in Assets, resourceManaged in Assets) map copyFiles,
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
-    copyResources in TestAssets <<= (resourceDirectories in TestAssets, resourceManaged in TestAssets) map copyFiles,
-    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets)
+    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
 
+    extractWebJarsPath in Assets := target.value / "webjars",
+    extractWebJarsPath in TestAssets := target.value / "webjars-test",
+    extractWebJarsCache in Assets := target.value / "webjars.cache",
+    extractWebJarsCache in TestAssets := target.value / "webjars-test.cache",
+    includeWebJars in Assets := Seq("*"),
+    // By default, don't extract any web jars in test
+    includeWebJars in TestAssets := Nil,
+    extractWebJarsClassLoader in Assets <<= (dependencyClasspath in Compile).map { modules =>
+      new URLClassLoader(modules.map(_.data.toURI.toURL), null)
+    },
+    extractWebJarsClassLoader in TestAssets <<= (dependencyClasspath in Test).map { modules =>
+      new URLClassLoader(modules.map(_.data.toURI.toURL), null)
+    }
+
+  ) ++ inConfig(Assets)(scopedSettings) ++ inConfig(TestAssets)(scopedSettings)
+
+  private val extractWebJarsSettings: Seq[Setting[_]] = Seq(
+    excludeWebJars := Nil,
+    allWebJars <<= extractWebJarsClassLoader.map(ExtractWebJars.discoverWebJars),
+    extractWebJars <<= (allWebJars, extractWebJarsClassLoader, includeWebJars, excludeWebJars, extractWebJarsPath,
+      extractWebJarsCache) map { (webJars, classLoader, includes, excludes, path, cache) =>
+        ExtractWebJars.extractWebJars(classLoader, ExtractWebJars.filterWebJars(webJars, includes, excludes), path, cache)
+    }
   )
 
+  private val scopedSettings: Seq[Setting[_]] = Seq(
+    unmanagedSourceDirectories := Seq(sourceDirectory.value),
+    includeFilter := jsFilter.value,
+    unmanagedSources <<= (unmanagedSourceDirectories, includeFilter, excludeFilter) map locateSources,
+    resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
+    copyResources <<= (resourceDirectories, resourceManaged) map copyFiles
+  ) ++ extractWebJarsSettings
 
   private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
     (sourceDirectories ** (includeFilter -- excludeFilter)).get
