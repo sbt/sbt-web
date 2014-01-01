@@ -1,0 +1,36 @@
+# Extract everything
+> web-assets:extract-web-jars
+$ exists target/webjars/jquery.js
+$ exists target/webjars/prototype.js
+
+> clean
+
+# Includes
+> set WebKeys.includeWebJars in WebKeys.Assets := Seq("prototype")
+> web-assets:extract-web-jars
+$ absent target/webjars/jquery.js
+$ exists target/webjars/prototype.js
+
+> clean
+
+# Excludes
+> set WebKeys.includeWebJars in WebKeys.Assets := Seq("*")
+> set WebKeys.excludeWebJars in WebKeys.Assets := Seq("jquery")
+> web-assets:extract-web-jars
+$ absent target/webjars/jquery.js
+$ exists target/webjars/prototype.js
+
+> clean
+
+# Caching
+> set WebKeys.excludeWebJars in WebKeys.Assets := Nil
+> web-assets:extract-web-jars
+# sleep either side of creating foo to ensure the modification time is newer than extracted web jars
+# but older than whatever is done next
+$ sleep 10
+$ touch target/foo
+$ sleep 10
+> web-assets:extract-web-jars
+# jquery.js should not have been reextracted, assert that it is older
+$ newer target/foo target/webjars/jquery.js
+

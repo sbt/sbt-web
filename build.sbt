@@ -30,3 +30,7 @@ publishTo := {
                         ("sbt-plugin-releases", scalasbt + "sbt-plugin-releases")
     Some(Resolver.url(name, new URL(url))(Resolver.ivyStylePatterns))
 }
+
+scriptedSettings
+
+scriptedLaunchOpts <+= version apply { v => s"-Dproject.version=$v" }
