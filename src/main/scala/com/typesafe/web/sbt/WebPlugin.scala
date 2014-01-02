@@ -148,8 +148,6 @@ object WebPlugin extends sbt.Plugin {
 
   // Actor system management and API
 
-  implicit val webActorTimeout = Timeout(5.seconds)
-
   private val webActorSystemAttrKey = AttributeKey[ActorSystem]("web-actor-system")
 
   private def load(state: State): State = {
