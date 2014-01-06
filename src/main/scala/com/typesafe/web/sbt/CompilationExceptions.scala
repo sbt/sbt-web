@@ -2,6 +2,37 @@ package com.typesafe.web.sbt
 
 import sbt._
 import xsbti.{Maybe, Position, Severity, Problem}
+import xsbti.CompileFailed
+
+object CompileProblems {
+
+  /**
+   * Report compilation problems using the given reporter.
+   * 
+   * If there are any compilation problems with Error severity, then a
+   * `CompileProblemsException` is thrown. The exception will contain
+   * the list of problems.
+   */
+  def report[Op,A](reporter: LoggerReporter, problems: Seq[Problem]): Unit = {
+    reporter.reset()
+    problems.foreach(p => reporter.log(p.position(), p.message(), p.severity()))
+    reporter.printSummary()
+    if (problems.exists(_.severity() == Severity.Error)) { throw new CompileProblemsException(problems.toArray) }
+  }
+
+}
+
+/**
+ * Exception thrown by `CompileProblems.report` if there are any problems
+ * to report. This exception contains the problems so they can be used
+ * for further processing (e.g. for display by Play).
+ */
+class CompileProblemsException(override val problems: Array[Problem])
+  extends CompileFailed
+  with FeedbackProvidedException {
+
+  override val arguments: Array[String] = Array.empty
+}
 
 /**
  * Capture a general problem with the compilation of a source file. General problems
