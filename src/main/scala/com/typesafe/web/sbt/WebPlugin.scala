@@ -64,6 +64,8 @@ object WebPlugin extends sbt.Plugin {
 
     val Assets = config("web-assets")
     val TestAssets = config("web-assets-test")
+    val Plugin = config("web-plugin")
+
     val jsDirName = SettingKey[String]("web-js-dir", "The name of JavaScript directories.")
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
@@ -105,11 +107,14 @@ object WebPlugin extends sbt.Plugin {
 
     extractWebJarsPath in Assets := target.value / "webjars",
     extractWebJarsPath in TestAssets := target.value / "webjars-test",
+    extractWebJarsPath in Plugin := (target in LocalRootProject).value / "webjars-plugin",
     extractWebJarsCache in Assets := target.value / "webjars.cache",
     extractWebJarsCache in TestAssets := target.value / "webjars-test.cache",
+    extractWebJarsCache in Plugin := (target in LocalRootProject).value / "webjars-plugin.cache",
     includeWebJars in Assets := Seq("*"),
-    // By default, don't extract any web jars in test
+    // By default, don't extract any web jars in test or for plugins
     includeWebJars in TestAssets := Nil,
+    includeWebJars in Plugin := Nil,
     extractWebJarsClassLoader in Assets <<= (dependencyClasspath in Compile).map {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
@@ -117,9 +122,13 @@ object WebPlugin extends sbt.Plugin {
     extractWebJarsClassLoader in TestAssets <<= (dependencyClasspath in Test).map {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
-    }
+    },
+    extractWebJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader
 
-  ) ++ inConfig(Assets)(scopedSettings) ++ inConfig(TestAssets)(scopedSettings)
+  ) ++
+    inConfig(Assets)(scopedSettings) ++
+    inConfig(TestAssets)(scopedSettings) ++
+    inConfig(Plugin)(extractWebJarsSettings)
 
   private val extractWebJarsSettings: Seq[Setting[_]] = Seq(
     excludeWebJars := Nil,
@@ -155,6 +164,38 @@ object WebPlugin extends sbt.Plugin {
     }).flatten
     IO.copy(copyDescs)
     copyDescs
+  }
+
+  private def copyNodeModulesTo(to: File, cacheFile: File, classLoader: ClassLoader): File = {
+    val cache = new FileSystemCache(cacheFile)
+    val extractor = new WebJarExtractor(cache, classLoader)
+    extractor.extractAllNodeModulesTo(to)
+    cache.save()
+    to
+  }
+
+  // Resource extract API
+
+  /**
+   * Copy a resource to a target folder.
+   * @param to the target folder.
+   * @param name the name of the resource.
+   * @param classLoader the class loader to use.
+   * @return the copied file.
+   */
+  def copyResourceTo(to: File, name: String, classLoader: ClassLoader): File = {
+    val f = to / name
+    if (!f.exists()) {
+      val is = classLoader.getResourceAsStream(name)
+      try {
+        IO.transfer(is, f)
+        f
+      } finally {
+        is.close()
+      }
+    } else {
+      f
+    }
   }
 
   // Actor system management and API
@@ -203,40 +244,4 @@ object WebPlugin extends sbt.Plugin {
     }
   }
 
-  /**
-   * Copy a resource to a target folder.
-   * @param to the target folder.
-   * @param name the name of the resource.
-   * @param classLoader the class loader to use.
-   * @return the copied file.
-   */
-  def copyResourceTo(to: File, name: String, classLoader: ClassLoader): File = {
-    val f = to / name
-    if (!f.exists()) {
-      val is = classLoader.getResourceAsStream(name)
-      try {
-        IO.transfer(is, f)
-        f
-      } finally {
-        is.close()
-      }
-    } else {
-      f
-    }
-  }
-
-  /**
-   * Copy node modules from all WebJars.
-   * @param to the target folder
-   * @param cacheFile the file to be used for the cache.
-   * @param classLoader  the class loader to use.
-   * @return the target folder used.
-   */
-  def copyNodeModulesTo(to: File, cacheFile: File, classLoader: ClassLoader): File = {
-    val cache = new FileSystemCache(cacheFile)
-    val extractor = new WebJarExtractor(cache, classLoader)
-    extractor.extractAllNodeModulesTo(to)
-    cache.save()
-    to
-  }
 }
