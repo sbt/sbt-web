@@ -72,8 +72,9 @@ package object incremental {
    * runIncremental method. The runOps method returns a value of type
    * A and this value is then returned by the runIncremental method.
    *
-   * @param streams The streams parameter is used to find a task-
-   * specific place for caching information between invocations.
+   * @param cacheDirectory A parent directory for a cache file that
+   *                       will be used for caching information between
+   *                       invocations.
    *
    * @param ops The ops parameter is a list of possible operations to
    * perform. The runIncremental method will prune this list and call
@@ -113,11 +114,11 @@ package object incremental {
    * distinguish different operations’ parameters.
    */
   def runIncremental[Op,A](
-      streams: TaskStreams, ops: Seq[Op])(
+      cacheDirectory: File, ops: Seq[Op])(
       runOps: Seq[Op] => (Map[Op, OpResult], A))(
       implicit inputHasher: OpInputHasher[Op]): A = {
     // Load the cache from a file in the current task's cache directory
-    val cacheFile: File = new File(streams.cacheDirectory, "op-cache")
+    val cacheFile: File = new File(cacheDirectory, "op-cache")
     val cache: OpCache = OpCacheIO.fromFile(cacheFile)
     // Clear out any unknown operations from the existing cache
     OpCache.vacuumExcept(cache, ops)
