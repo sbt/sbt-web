@@ -166,6 +166,7 @@ object WebPlugin extends sbt.Plugin {
     copyDescs
   }
 
+  // FIXME: Should be part of the ExtractWebJars class itself.
   private def copyNodeModulesTo(to: File, cacheFile: File, classLoader: ClassLoader): File = {
     val cache = new FileSystemCache(cacheFile)
     val extractor = new WebJarExtractor(cache, classLoader)

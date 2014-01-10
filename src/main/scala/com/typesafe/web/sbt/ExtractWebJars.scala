@@ -8,6 +8,8 @@ import org.webjars.{WebJarExtractor, FileSystemCache}
 
 object ExtractWebJars {
 
+  // FIXME: Some of this behaviour should go back into the WebJar extractor code itself.
+
   /** Discover all the WebJars on the given classloader */
   def discoverWebJars(classLoader: ClassLoader): Seq[String] = {
     def findWebJarInURL(resource: URL): Seq[String] = {
