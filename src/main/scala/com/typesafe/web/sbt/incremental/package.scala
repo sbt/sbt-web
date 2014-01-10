@@ -37,9 +37,6 @@ import xsbti.{ CompileFailed, Problem, Severity }
  * - If an operation succeeds, the details are recorded so that the
  *   operation can be skipped in the future, if possible.
  * 
- * - If any operations fail, the runIncremental method takes care of the
- *   details of displaying any error messages to the user.
- * 
  * Behind the scenes, runIncremental maintains a record of each operation
  * that succeeds. It uses these records to work out which operations need
  * to be run and which can be skipped.

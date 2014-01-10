@@ -178,7 +178,8 @@ object WebPlugin extends sbt.Plugin {
   // Resource extract API
 
   /**
-   * Copy a resource to a target folder.
+   * Copy a resource to a target folder, unless that resource already exists.
+   * If the resource exists, then this method does nothing.
    * @param to the target folder.
    * @param name the name of the resource.
    * @param classLoader the class loader to use.
