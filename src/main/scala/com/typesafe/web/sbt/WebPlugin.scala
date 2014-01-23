@@ -70,14 +70,11 @@ object WebPlugin extends sbt.Plugin {
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
 
-    val extractWebJars = TaskKey[File]("web-extract-web-jars", "Extract webjars", ATask)
-    val extractWebJarsPath = SettingKey[File]("web-extract-web-jars-path", "The path to extract WebJars to", ASetting)
-    val extractWebJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
-    val allWebJars = TaskKey[Seq[String]]("web-all-web-jars", "Discover all WebJars on the classpath", CTask)
-    val includeWebJars = SettingKey[Seq[String]]("web-include-web-jars", "Include WebJars with the given name", BSetting)
-    val excludeWebJars = SettingKey[Seq[String]]("web-exclude-web-jars", "Exclude WebJars with the given name", BSetting)
-    val extractWebJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
-    val nodeModules = TaskKey[File]("web-node-modules", "The locations of node modules for all related webjars.")
+    val webJars = TaskKey[File]("web-jars", "The location for all related webjars.")
+    val nodeModules = TaskKey[File]("web-node-modules", "The location of extracted node modules for all related webjars.")
+    val webJarsPath = SettingKey[File]("web-extract-web-jars-path", "The path to extract WebJars to", ASetting)
+    val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
+    val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
   }
 
   import WebKeys._
@@ -105,25 +102,21 @@ object WebPlugin extends sbt.Plugin {
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
     copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
 
-    extractWebJarsPath in Assets := target.value / "webjars",
-    extractWebJarsPath in TestAssets := target.value / "webjars-test",
-    extractWebJarsPath in Plugin := (target in LocalRootProject).value / "webjars-plugin",
-    extractWebJarsCache in Assets := target.value / "webjars.cache",
-    extractWebJarsCache in TestAssets := target.value / "webjars-test.cache",
-    extractWebJarsCache in Plugin := (target in LocalRootProject).value / "webjars-plugin.cache",
-    includeWebJars in Assets := Seq("*"),
-    // By default, don't extract any web jars in test or for plugins
-    includeWebJars in TestAssets := Nil,
-    includeWebJars in Plugin := Nil,
-    extractWebJarsClassLoader in Assets <<= (dependencyClasspath in Compile).map {
+    webJarsPath in Assets := target.value / "webjars",
+    webJarsPath in TestAssets := target.value / "webjars-test",
+    webJarsPath in Plugin := (target in LocalRootProject).value / "webjars-plugin",
+    webJarsCache in Assets := target.value / "webjars.cache",
+    webJarsCache in TestAssets := target.value / "webjars-test.cache",
+    webJarsCache in Plugin := (target in LocalRootProject).value / "webjars-plugin.cache",
+    webJarsClassLoader in Assets <<= (dependencyClasspath in Compile).map {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
     },
-    extractWebJarsClassLoader in TestAssets <<= (dependencyClasspath in Test).map {
+    webJarsClassLoader in TestAssets <<= (dependencyClasspath in Test).map {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
     },
-    extractWebJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader
+    webJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader
 
   ) ++
     inConfig(Assets)(scopedSettings) ++
@@ -131,16 +124,19 @@ object WebPlugin extends sbt.Plugin {
     inConfig(Plugin)(extractWebJarsSettings)
 
   private val extractWebJarsSettings: Seq[Setting[_]] = Seq(
-    excludeWebJars := Nil,
-    allWebJars <<= extractWebJarsClassLoader.map(ExtractWebJars.discoverWebJars),
-    extractWebJars <<= (allWebJars, extractWebJarsClassLoader, includeWebJars, excludeWebJars, extractWebJarsPath,
-      extractWebJarsCache) map {
-      (webJars, classLoader, includes, excludes, path, cache) =>
-        ExtractWebJars.extractWebJars(classLoader, ExtractWebJars.filterWebJars(webJars, includes, excludes), path, cache)
-    },
-    nodeModules <<= (extractWebJarsClassLoader, extractWebJarsPath, extractWebJarsCache) map {
+    webJars <<= (webJarsClassLoader, webJarsPath, webJarsCache) map {
       (classLoader, path, cache) =>
-        copyNodeModulesTo(path / WebJarExtractor.NODE_MODULES, cache, classLoader)
+        withWebJarExtractor(path, cache, classLoader) {
+          (e, to) =>
+            e.extractAllWebJarsTo(to)
+        }
+    },
+    nodeModules <<= (webJarsClassLoader, webJarsPath, webJarsCache) map {
+      (classLoader, path, cache) =>
+        withWebJarExtractor(path / "node_modules", cache, classLoader) {
+          (e, to) =>
+            e.extractAllNodeModulesTo(to)
+        }
     }
 
   )
@@ -166,11 +162,11 @@ object WebPlugin extends sbt.Plugin {
     copyDescs
   }
 
-  // FIXME: Should be part of the ExtractWebJars class itself.
-  private def copyNodeModulesTo(to: File, cacheFile: File, classLoader: ClassLoader): File = {
+  private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
+                                 (block: (WebJarExtractor, File) => Unit): File = {
     val cache = new FileSystemCache(cacheFile)
     val extractor = new WebJarExtractor(cache, classLoader)
-    extractor.extractAllNodeModulesTo(to)
+    block(extractor, to)
     cache.save()
     to
   }
