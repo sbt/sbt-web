@@ -66,7 +66,6 @@ object WebPlugin extends sbt.Plugin {
     val TestAssets = config("web-assets-test")
     val Plugin = config("web-plugin")
 
-    val jsDirName = SettingKey[String]("web-js-dir", "The name of JavaScript directories.")
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
 
@@ -92,7 +91,6 @@ object WebPlugin extends sbt.Plugin {
 
     jsFilter in Assets := GlobFilter("*.js"),
     jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
-    includeFilter in TestAssets := (jsFilter in TestAssets).value,
 
     resourceDirectory in Assets := (sourceDirectory in Compile).value / "public",
     resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
@@ -101,6 +99,11 @@ object WebPlugin extends sbt.Plugin {
 
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
     copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
+
+    watchSources <++= unmanagedSources in Assets,
+    watchSources <++= unmanagedSources in TestAssets,
+    watchSources <++= unmanagedResources in Assets,
+    watchSources <++= unmanagedResources in TestAssets,
 
     webJarsPath in Assets := target.value / "webjars",
     webJarsPath in TestAssets := target.value / "webjars-test",
@@ -143,10 +146,11 @@ object WebPlugin extends sbt.Plugin {
 
   private val scopedSettings: Seq[Setting[_]] = Seq(
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
-    includeFilter := jsFilter.value,
+    includeFilter := GlobFilter("*"),
     unmanagedSources <<= (unmanagedSourceDirectories, includeFilter, excludeFilter) map locateSources,
     resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
-    copyResources <<= (resourceDirectories, resourceManaged) map copyFiles
+    unmanagedResources <<= (resourceDirectories, includeFilter, excludeFilter) map locateSources,
+    copyResources <<= (unmanagedResources, resourceManaged) map copyFiles
   ) ++ extractWebJarsSettings
 
   private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
