@@ -48,7 +48,7 @@ import org.webjars.{WebJarExtractor, FileSystemCache}
  *
  * In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
  * files become public. For example a coffeescript plugin would use files from "unmanagedSources in Assets" and produce them to
- * a "jsDirName" inside "resourceManaged in Assets".
+ * "resourceManaged in Assets".
  *
  * All assets be them subject to processing or static in nature, will be copied to the resourceManaged destinations.
  *
