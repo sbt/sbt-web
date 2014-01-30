@@ -191,7 +191,7 @@ object WebPlugin extends sbt.Plugin {
     if (!f.exists()) {
       val is = classLoader.getResourceAsStream(name)
       try {
-        f.mkdirs()
+        f.getParentFile.mkdirs()
         IO.transfer(is, f)
         f
       } finally {
