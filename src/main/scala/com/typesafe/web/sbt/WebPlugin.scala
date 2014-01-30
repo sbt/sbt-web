@@ -157,6 +157,7 @@ object WebPlugin extends sbt.Plugin {
     (sourceDirectories ** (includeFilter -- excludeFilter)).get
 
   private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
+    target.mkdirs()
     val copyDescs: Seq[(File, File)] = (for {
       source: File <- sources
     } yield {
@@ -190,6 +191,7 @@ object WebPlugin extends sbt.Plugin {
     if (!f.exists()) {
       val is = classLoader.getResourceAsStream(name)
       try {
+        f.mkdirs()
         IO.transfer(is, f)
         f
       } finally {
