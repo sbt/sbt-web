@@ -12,6 +12,8 @@ This project provides the building blocks for web oriented sbt plugins by bringi
 sbt-web was driven from the desire to factor out client-side web concerns from the [Play Framework](http://www.playframework.com/).
 However sbt-web is entirely independent of Play and can be used for any project that uses sbt as its build system.
 
+For an overview of sbt-web: http://www.ustream.tv/recorded/42774873
+
 File Directory Layout
 ---------------------
 
