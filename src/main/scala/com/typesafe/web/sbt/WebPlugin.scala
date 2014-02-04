@@ -161,7 +161,7 @@ object WebPlugin extends sbt.Plugin {
     val copyDescs: Seq[(File, File)] = (for {
       source: File <- sources
     } yield {
-      (source ** "*") filter (!_.isDirectory) x Path.rebase(source, target)
+      source filter (!_.isDirectory) pair Path.rebase(source,target)
     }).flatten
     IO.copy(copyDescs)
     copyDescs
