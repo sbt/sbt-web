@@ -150,21 +150,19 @@ object WebPlugin extends sbt.Plugin {
     unmanagedSources <<= (unmanagedSourceDirectories, includeFilter, excludeFilter) map locateSources,
     resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
     unmanagedResources <<= (resourceDirectories, includeFilter, excludeFilter) map locateSources,
-    copyResources <<= (unmanagedResources, resourceManaged) map copyFiles
+    copyResources <<= copyResourcesTask
   ) ++ extractWebJarsSettings
 
   private def locateSources(sourceDirectories: Seq[File], includeFilter: FileFilter, excludeFilter: FileFilter): Seq[File] =
     (sourceDirectories ** (includeFilter -- excludeFilter)).get
 
-  private def copyFiles(sources: Seq[File], target: File): Seq[(File, File)] = {
-    target.mkdirs()
-    val copyDescs: Seq[(File, File)] = (for {
-      source: File <- sources
-    } yield {
-      source filter (!_.isDirectory) pair Path.rebase(source,target)
-    }).flatten
-    IO.copy(copyDescs)
-    copyDescs
+  private def copyResourcesTask = (unmanagedResources, resourceDirectories, resourceManaged, streams) map {
+    (resources, dirs, target, s) => {
+      val cache = s.cacheDirectory / "copy-resources"
+      val mappings = (resources --- dirs) pair (rebase(dirs, target) | flat(target))
+      Sync(cache)(mappings)
+      mappings
+    }
   }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
