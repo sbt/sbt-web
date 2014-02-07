@@ -124,6 +124,14 @@ package object incremental {
     val prunedOps: Seq[Op] = OpCache.newOrChanged(cache, ops)
     val (results: Map[Op, OpResult], finalResult) = runOps(prunedOps)
 
+    // Check returned results are all within the set of given ops
+    val prunedOpsSet: Set[Op] = prunedOps.to[Set]
+    val resultOpsSet: Set[Op] = results.keySet
+    val unexpectedOps: Set[Op] = resultOpsSet -- prunedOpsSet
+    if (!unexpectedOps.isEmpty) {
+      throw new IllegalArgumentException(s"runOps function returned results for unknown ops: $unexpectedOps")
+    }
+
     // Update the cache with the new information (vacuuming, new results)
     OpCache.cacheResults(cache, results)
     OpCacheIO.toFile(cache, cacheFile)

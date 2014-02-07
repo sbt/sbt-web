@@ -308,6 +308,17 @@ class IncrementalSpec extends Specification {
       }
     }
 
+    "fail when runOps gives result for unknown op" in {
+      IO.withTemporaryDirectory { tmpDir =>
+        runIncremental(tmpDir, List("op1")) { prunedOps =>
+          (
+            Map[String,OpResult]("op2" -> OpFailure),
+            prunedOps must_== List("op1")
+          )
+        } must throwA[IllegalArgumentException]
+      }
+    }
+
   }
 
 }
