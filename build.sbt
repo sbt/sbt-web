@@ -14,7 +14,6 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
-  "com.assembla.scala-incubator" %% "graph-core" % "1.7.0",
   "org.specs2" %% "specs2" % "2.2.2" % "test",
   "junit" % "junit" % "4.11" % "test",
   "org.webjars" % "webjars-locator" % "0.9"
