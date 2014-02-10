@@ -29,7 +29,7 @@ jsmin := { (mappings: Pipeline.Mappings) =>
   minMappings ++ other
 }
 
-WebKeys.stages += jsmin
+WebKeys.stages <+= jsmin
 
 val check = taskKey[Unit]("check the pipeline mappings")
 

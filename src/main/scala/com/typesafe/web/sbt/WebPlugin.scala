@@ -76,7 +76,7 @@ object WebPlugin extends sbt.Plugin {
     val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
 
-    val stages = TaskKey[Seq[TaskKey[Pipeline.Stage]]]("web-stages", "Sequence of task keys for the asset pipeline stages.")
+    val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
     val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
     val pipelineInputs = TaskKey[Pipeline.Mappings]("web-pipeline-inputs", "The input mappings for the asset pipeline.")
     val pipeline = TaskKey[Pipeline.Mappings]("web-pipeline", "Run all stages of the asset pipeline.")
