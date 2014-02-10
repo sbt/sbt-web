@@ -7,6 +7,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
+import com.typesafe.web.sbt.pipeline.Pipeline
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -74,6 +75,11 @@ object WebPlugin extends sbt.Plugin {
     val webJarsPath = SettingKey[File]("web-extract-web-jars-path", "The path to extract WebJars to", ASetting)
     val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
+
+    val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
+    val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
+    val pipelineInputs = TaskKey[Pipeline.Mappings]("web-pipeline-inputs", "The input mappings for the asset pipeline.")
+    val pipeline = TaskKey[Pipeline.Mappings]("web-pipeline", "Run all stages of the asset pipeline.")
   }
 
   import WebKeys._
@@ -119,7 +125,12 @@ object WebPlugin extends sbt.Plugin {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
     },
-    webJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader
+    webJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader,
+
+    stages := Seq.empty,
+    allStages <<= Pipeline.chain(stages),
+    pipelineInputs <<= ((resourceManaged in Assets) map Pipeline.mappings).dependsOn(compile in Compile, copyResources in Assets),
+    pipeline := allStages.value(pipelineInputs.value)
 
   ) ++
     inConfig(Assets)(scopedSettings) ++
