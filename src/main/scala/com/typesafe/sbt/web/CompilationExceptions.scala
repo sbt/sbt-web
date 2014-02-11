@@ -1,4 +1,4 @@
-package com.typesafe.web.sbt
+package com.typesafe.sbt.web
 
 import sbt._
 import xsbti.{Maybe, Position, Severity, Problem}

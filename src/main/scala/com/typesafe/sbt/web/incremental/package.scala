@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
-package com.typesafe.web.sbt
+package com.typesafe.sbt.web
 
 import java.io.File
 import sbt.{ FeedbackProvidedException, LoggerReporter }

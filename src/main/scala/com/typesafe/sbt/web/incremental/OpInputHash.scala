@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2009-2013 Typesafe Inc. <http://www.typesafe.com>
  */
-package com.typesafe.web.sbt.incremental
+package com.typesafe.sbt.web.incremental
 
 import sbt.Hash
 

@@ -1,4 +1,4 @@
-import com.typesafe.web.sbt.pipeline.Pipeline
+import com.typesafe.sbt.web.pipeline.Pipeline
 
 webSettings
 

@@ -1,4 +1,4 @@
-package com.typesafe.web.sbt.pipeline
+package com.typesafe.sbt.web.pipeline
 
 import sbt._
 import sbt.Def.Initialize

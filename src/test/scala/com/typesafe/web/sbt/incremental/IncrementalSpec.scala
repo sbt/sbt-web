@@ -1,4 +1,4 @@
-package com.typesafe.web.sbt.incremental
+package com.typesafe.sbt.web.incremental
 
 import java.io.File
 import org.junit.runner.RunWith

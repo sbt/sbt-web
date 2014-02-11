@@ -1,6 +1,6 @@
 sbtPlugin := true
 
-organization := "com.typesafe"
+organization := "com.typesafe.sbt"
 
 name := "sbt-web"
 

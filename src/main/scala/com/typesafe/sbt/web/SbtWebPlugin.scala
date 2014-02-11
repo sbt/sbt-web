@@ -1,13 +1,11 @@
-package com.typesafe.web.sbt
+package com.typesafe.sbt.web
 
 import sbt._
 import sbt.Keys._
 import akka.actor.{ActorSystem, ActorRefFactory}
-import akka.util.Timeout
-import scala.concurrent.duration._
 import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
-import com.typesafe.web.sbt.pipeline.Pipeline
+import com.typesafe.sbt.web.pipeline.Pipeline
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -57,7 +55,7 @@ import com.typesafe.web.sbt.pipeline.Pipeline
  * conventions at large.
  */
 
-object WebPlugin extends sbt.Plugin {
+object SbtWebPlugin extends sbt.Plugin {
 
   object WebKeys {
 
@@ -125,7 +123,7 @@ object WebPlugin extends sbt.Plugin {
       modules =>
         new URLClassLoader(modules.map(_.data.toURI.toURL), null)
     },
-    webJarsClassLoader in Plugin := WebPlugin.getClass.getClassLoader,
+    webJarsClassLoader in Plugin := SbtWebPlugin.getClass.getClassLoader,
 
     stages := Seq.empty,
     allStages <<= Pipeline.chain(stages),
