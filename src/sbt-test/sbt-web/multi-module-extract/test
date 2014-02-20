@@ -1,3 +1,3 @@
 > b/web-assets:web-jars
-$ exists b/target/webjars/a.js
+$ exists b/target/webjars/a/a.js
 

@@ -1,7 +1,7 @@
 # Extract everything
 > web-assets:web-jars
-$ exists target/webjars/jquery.js
-$ exists target/webjars/prototype.js
+$ exists target/webjars/jquery/jquery.js
+$ exists target/webjars/prototype/prototype.js
 
 # Extract node modules
 > web-assets:web-node-modules
@@ -18,5 +18,5 @@ $ touch target/foo
 $ sleep 1
 > web-assets:web-jars
 # jquery.js should not have been re-extracted, assert that it is older
-$ newer target/foo target/webjars/jquery.js
+$ newer target/foo target/webjars/jquery/jquery.js
 
