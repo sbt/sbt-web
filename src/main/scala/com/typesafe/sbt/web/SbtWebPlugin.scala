@@ -92,6 +92,8 @@ object SbtWebPlugin extends sbt.Plugin {
 
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
+    sourceDirectories in Assets := (unmanagedSourceDirectories in Assets).value,
+    sourceDirectories in TestAssets := (unmanagedSourceDirectories in TestAssets).value,
 
     jsFilter in Assets := GlobFilter("*.js"),
     jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
@@ -101,8 +103,20 @@ object SbtWebPlugin extends sbt.Plugin {
     resourceManaged in Assets := target.value / "public",
     resourceManaged in TestAssets := target.value / "public-test",
 
+    // Stub compile tasks
+    compile in Assets := inc.Analysis.Empty,
+    compile in TestAssets := inc.Analysis.Empty,
+    compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
+
+    // Stub test task
+    test in TestAssets := (),
+    test in TestAssets <<= (test in TestAssets).dependsOn(compile in TestAssets),
+
+    compile in Compile <<= (compile in Compile).dependsOn(compile in Assets),
+    compile in Test <<= (compile in Test).dependsOn(compile in TestAssets),
     copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
     copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
+    test in Test <<= (test in Test).dependsOn(test in TestAssets),
 
     watchSources <++= unmanagedSources in Assets,
     watchSources <++= unmanagedSources in TestAssets,
