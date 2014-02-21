@@ -68,19 +68,21 @@ object SbtWebPlugin extends sbt.Plugin {
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
 
-    val webJars = TaskKey[File]("web-jars", "The location for all related webjars.")
-    val nodeModules = TaskKey[File]("web-node-modules", "The location of extracted node modules for all related webjars.")
     val nodeModulesPath = SettingKey[File]("web-extract-node-modules-path", "The path to extract WebJar node modules to", ASetting)
+    val nodeModules = TaskKey[File]("web-node-modules", "The location of extracted node modules for all related webjars.")
     val webJarsPath = SettingKey[File]("web-extract-web-jars-path", "The path to extract WebJars to", ASetting)
+    val webJarsPathLib = SettingKey[String]("web-extract-web-jars-path-sub", "The sub folder of the path to extract WebJars to", ASetting)
     val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
+    val webJars = TaskKey[PathMappings]("web-jars", "Extracted webjars.")
+
+    val assetTasks = SettingKey[Seq[Task[PathMappings]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
+    val assetMappings = TaskKey[PathMappings]("web-all-asset-mappings", "The input mappings for the all assets task.")
+    val assets = TaskKey[FileMappings]("web-all-assets", "All of the web assets.")
 
     val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
     val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
-    val pipelineInputs = TaskKey[Pipeline.Mappings]("web-pipeline-inputs", "The input mappings for the asset pipeline.")
-    val pipeline = TaskKey[Pipeline.Mappings]("web-pipeline", "Run all stages of the asset pipeline.")
-
-    val assets = TaskKey[Seq[(File, File)]]("web-all-assets", "All of the web assets")
+    val pipeline = TaskKey[PathMappings]("web-pipeline", "Run all stages of the asset pipeline.")
   }
 
   import WebKeys._
@@ -106,30 +108,12 @@ object SbtWebPlugin extends sbt.Plugin {
     resourceManaged in Assets := target.value / "public",
     resourceManaged in TestAssets := target.value / "public-test",
 
-    // Stub compile tasks
-    compile in Assets := inc.Analysis.Empty,
-    compile in TestAssets := inc.Analysis.Empty,
-    compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
-
-    // Stub test task
-    test in TestAssets :=(),
-    test in TestAssets <<= (test in TestAssets).dependsOn(compile in TestAssets),
-
-    compile in Compile <<= (compile in Compile).dependsOn(compile in Assets),
-    compile in Test <<= (compile in Test).dependsOn(compile in TestAssets),
-    copyResources in Compile <<= (copyResources in Compile).dependsOn(copyResources in Assets),
-    copyResources in Test <<= (copyResources in Test).dependsOn(copyResources in TestAssets),
-    test in Test <<= (test in Test).dependsOn(test in TestAssets),
-
-    watchSources <++= unmanagedSources in Assets,
-    watchSources <++= unmanagedSources in TestAssets,
-    watchSources <++= unmanagedResources in Assets,
-    watchSources <++= unmanagedResources in TestAssets,
-
     nodeModulesPath in Assets := target.value / "node-modules",
     nodeModulesPath in TestAssets := target.value / "node-modules-test",
     nodeModulesPath in Plugin := (target in Plugin).value / "node-modules",
 
+    webJarsPath in Assets := target.value / "webjars",
+    webJarsPath in TestAssets := target.value / "webjars-test",
     webJarsCache in Assets := target.value / "webjars.cache",
     webJarsCache in TestAssets := target.value / "webjars-test.cache",
     webJarsCache in Plugin := (target in Plugin).value / "webjars-plugin.cache",
@@ -143,28 +127,40 @@ object SbtWebPlugin extends sbt.Plugin {
     },
     webJarsClassLoader in Plugin := SbtWebPlugin.getClass.getClassLoader,
 
-    assets in Assets := Def.task {
-      val generated = (
-        (resourceManaged in Assets).value.*** ---
-          ((copyResources in Assets).value map (_._2))
-        ).filter(!_.isDirectory).get
-      val mappings = generated map (g => g -> g)
-      mappings ++ (copyResources in Assets).value
-    }.dependsOn(compile in Assets, webJars in Assets).value,
+    assets in Assets := {
+      syncMappings(
+        streams.value.cacheDirectory,
+        (assetMappings in Assets).value,
+        (resourceManaged in Assets).value
+      )
+    },
+    assets in TestAssets := {
+      syncMappings(
+        streams.value.cacheDirectory,
+        (assetMappings in Assets).value ++ (assetMappings in TestAssets).value,
+        (resourceManaged in TestAssets).value
+      )
+    },
 
-    assets in TestAssets := Def.task {
-      val cache = streams.value.cacheDirectory / "copy-assets"
-      val mappings = (assets in Assets).value
-        .map(_._2)
-        .pair(rebase((resourceManaged in Assets).value, (resourceManaged in TestAssets).value) | flat((resourceManaged in TestAssets).value))
-      Sync(cache)(mappings)
-      mappings ++ (copyResources in TestAssets).value
-    }.dependsOn(compile in TestAssets, webJars in TestAssets).value,
+    compile in Assets := inc.Analysis.Empty,
+    compile in TestAssets := inc.Analysis.Empty,
+    compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
+
+    test in TestAssets :=(),
+    test in TestAssets <<= (test in TestAssets).dependsOn(compile in TestAssets),
+
+    compile in Compile <<= (compile in Compile).dependsOn(compile in Assets),
+    compile in Test <<= (compile in Test).dependsOn(compile in TestAssets),
+    test in Test <<= (test in Test).dependsOn(test in TestAssets),
+
+    watchSources <++= unmanagedSources in Assets,
+    watchSources <++= unmanagedSources in TestAssets,
+    watchSources <++= unmanagedResources in Assets,
+    watchSources <++= unmanagedResources in TestAssets,
 
     stages := Seq.empty,
     allStages <<= Pipeline.chain(stages),
-    pipelineInputs <<= ((resourceManaged in Assets) map Pipeline.mappings).dependsOn(assets in Assets),
-    pipeline := allStages.value(pipelineInputs.value),
+    pipeline := allStages.value((assetMappings in Assets).value),
 
     baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
     target in Plugin := (baseDirectory in Plugin).value / "target",
@@ -182,20 +178,17 @@ object SbtWebPlugin extends sbt.Plugin {
     unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
     unmanagedResources := (resourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
-    copyResources := {
-      val cache = streams.value.cacheDirectory / "copy-resources"
-      val mappings = (unmanagedResources.value --- resourceDirectories.value)
-        .pair(rebase(resourceDirectories.value, resourceManaged.value) | flat(resourceManaged.value))
-      Sync(cache)(mappings)
-      mappings: Seq[(File, File)]
-    },
-    webJarsPath := resourceManaged.value / "lib",
+    webJarsPathLib := "lib",
     webJars := {
-      withWebJarExtractor(webJarsPath.value, webJarsCache.value, webJarsClassLoader.value) {
+      withWebJarExtractor(webJarsPath.value / webJarsPathLib.value, webJarsCache.value, webJarsClassLoader.value) {
         (e, to) =>
           e.extractAllWebJarsTo(to)
       }
-    }
+      webJarsPath.value.***.filter(!_.isDirectory) pair relativeTo(webJarsPath.value)
+    },
+    assetTasks := Nil,
+    assetMappings := assetTasks(_.join).map(_.flatten).value ++ webJars.value,
+    compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
   )
 
   val nodeModulesSettings = Seq(
@@ -206,6 +199,15 @@ object SbtWebPlugin extends sbt.Plugin {
       }
     }
   )
+
+  private def syncMappings(cacheDir: File, mappings: PathMappings, target: File): FileMappings = {
+    val cache = cacheDir / "sync-mappings"
+    val copies = mappings map {
+      case (file, path) => file -> (target / path)
+    }
+    Sync(cache)(copies)
+    copies
+  }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {

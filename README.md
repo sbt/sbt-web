@@ -58,6 +58,11 @@ All assets wether they need processing or are static in nature, will be copied t
 
 Assets can be organized however desired within the `assets` directory.
 
+One last thing regarding the public and public-test folders. Any WebJar depended on by the project will be automatically
+extracted into these folders e.g. target/public/lib/jquery/jquery.js. In addition the public-test folder receives
+the contents of the public folder as well as test assets. This eases the support of test frameworks given that
+all files are locatable from one root.
+
 Incremental Execution
 ---------------------
 
