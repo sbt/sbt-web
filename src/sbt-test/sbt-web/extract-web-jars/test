@@ -1,22 +1,22 @@
 # Extract everything
-> web-assets:web-jars
-$ exists target/webjars/jquery/jquery.js
-$ exists target/webjars/prototype/prototype.js
+> web-assets:web-all-assets
+$ exists target/public/lib/jquery/jquery.js
+$ exists target/public/lib/prototype/prototype.js
 
 # Extract node modules
 > web-assets:web-node-modules
-$ exists target/webjars/node_modules/less/package.json
+$ exists target/node-modules/less/package.json
 
 > clean
 
 # Caching
-> web-assets:web-jars
+> web-assets:web-all-assets
 # sleep either side of creating foo to ensure the modification time is newer than extracted web jars
 # but older than whatever is done next
 $ sleep 1
 $ touch target/foo
 $ sleep 1
-> web-assets:web-jars
+> web-assets:web-all-assets
 # jquery.js should not have been re-extracted, assert that it is older
-$ newer target/foo target/webjars/jquery/jquery.js
+$ newer target/foo target/public/lib/jquery/jquery.js
 
