@@ -74,15 +74,15 @@ object SbtWebPlugin extends sbt.Plugin {
     val webJarsPathLib = SettingKey[String]("web-extract-web-jars-path-sub", "The sub folder of the path to extract WebJars to", ASetting)
     val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
-    val webJars = TaskKey[PathMappings]("web-jars", "Extracted webjars.")
+    val webJars = TaskKey[Seq[PathMapping]]("web-jars", "Extracted webjars.")
 
-    val assetTasks = SettingKey[Seq[Task[PathMappings]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
-    val assetMappings = TaskKey[PathMappings]("web-all-asset-mappings", "The input mappings for the all assets task.")
-    val assets = TaskKey[FileMappings]("web-all-assets", "All of the web assets.")
+    val assetTasks = SettingKey[Seq[Task[Seq[PathMapping]]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
+    val assetMappings = TaskKey[Seq[PathMapping]]("web-all-asset-mappings", "The input mappings for the all assets task.")
+    val assets = TaskKey[File]("web-all-assets", "All of the web assets.")
 
     val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
     val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
-    val pipeline = TaskKey[PathMappings]("web-pipeline", "Run all stages of the asset pipeline.")
+    val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
   }
 
   import WebKeys._
@@ -200,13 +200,13 @@ object SbtWebPlugin extends sbt.Plugin {
     }
   )
 
-  private def syncMappings(cacheDir: File, mappings: PathMappings, target: File): FileMappings = {
+  private def syncMappings(cacheDir: File, mappings: Seq[PathMapping], target: File): File = {
     val cache = cacheDir / "sync-mappings"
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
     Sync(cache)(copies)
-    copies
+    target
   }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)

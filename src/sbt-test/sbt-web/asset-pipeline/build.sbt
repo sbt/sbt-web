@@ -1,10 +1,10 @@
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.SbtWebPlugin.WebKeys._
-import com.typesafe.sbt.web.PathMappings
+import com.typesafe.sbt.web.PathMapping
 
 webSettings
 
-val coffee = taskKey[PathMappings]("mock coffeescript processing")
+val coffee = taskKey[Seq[PathMapping]]("mock coffeescript processing")
 
 coffee := {
   // translate .coffee files into .js files
@@ -22,7 +22,7 @@ assetTasks in Assets <+= coffee
 
 val jsmin = taskKey[Pipeline.Stage]("mock js minifier")
 
-jsmin := { (mappings: PathMappings) =>
+jsmin := { (mappings: Seq[PathMapping]) =>
   // pretend to combine all .js files into one .min.js file
   val targetDir = target.value / "jsmin" / "public"
   val (js, other) = mappings partition (_._2.endsWith(".js"))

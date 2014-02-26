@@ -2,13 +2,13 @@ package com.typesafe.sbt.web.pipeline
 
 import sbt._
 import sbt.Def.Initialize
-import com.typesafe.sbt.web.PathMappings
+import com.typesafe.sbt.web.PathMapping
 
 object Pipeline {
   /**
    * Each pipeline stage transforms the mappings from the previous stage.
    */
-  type Stage = PathMappings => PathMappings
+  type Stage = Seq[PathMapping] => Seq[PathMapping]
 
   /**
    * Dynamically compose a sequence of transforming function tasks into a single task.
