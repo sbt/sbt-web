@@ -6,6 +6,7 @@ import akka.actor.{ActorSystem, ActorRefFactory}
 import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import com.typesafe.sbt.web.pipeline.Pipeline
+import com.typesafe.sbt.web.incremental.OpSuccess
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -78,6 +79,7 @@ object SbtWebPlugin extends sbt.Plugin {
     val webJars = TaskKey[Seq[PathMapping]]("web-jars", "Extracted webjars.")
 
     val assetTasks = SettingKey[Seq[Task[Seq[PathMapping]]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
+    val rawAssets = TaskKey[Seq[PathMapping]]("web-raw-assets", "Maps which assets should be copied as is from the assets directory")
     val assetMappings = TaskKey[Seq[PathMapping]]("web-all-asset-mappings", "The input mappings for the all assets task.")
     val assets = TaskKey[File]("web-all-assets", "All of the web assets.")
 
@@ -175,10 +177,11 @@ object SbtWebPlugin extends sbt.Plugin {
 
   val unscopedAssetSettings: Seq[Setting[_]] = Seq(
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
+    unmanagedResourceDirectories := Seq(resourceDirectory.value),
     includeFilter := GlobFilter("*"),
     unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
-    resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
-    unmanagedResources := (resourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
+    resourceDirectories := unmanagedSourceDirectories.value ++ unmanagedResourceDirectories.value,
+    unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     webJarsPathLib := "lib",
     extractWebJars := {
       withWebJarExtractor(webJarsPath.value / webJarsPathLib.value, webJarsCache.value, webJarsClassLoader.value) {
@@ -190,7 +193,13 @@ object SbtWebPlugin extends sbt.Plugin {
     webJars := {
       extractWebJars.value.***.filter(!_.isDirectory) pair relativeTo(extractWebJars.value)
     },
+    rawAssets := {
+      (unmanagedSourceDirectories.value ++ unmanagedResourceDirectories.value).flatMap { dir: File =>
+        (dir ** (includeFilter.value -- excludeFilter.value)).pair(relativeTo(dir), false)
+      }
+    },
     assetTasks := Nil,
+    assetTasks <+= rawAssets,
     assetMappings := assetTasks(_.join).map(_.flatten).value ++ webJars.value,
     compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
   )
@@ -225,26 +234,44 @@ object SbtWebPlugin extends sbt.Plugin {
   // Resource extract API
 
   /**
-   * Copy a resource to a target folder, unless that resource already exists.
-   * If the resource exists, then this method does nothing.
+   * Copy a resource to a target folder.
+   *
+   * The resource won't be copied if the new file is older.
+   *
    * @param to the target folder.
    * @param name the name of the resource.
    * @param classLoader the class loader to use.
+   * @param cacheDir the dir to cache whether the file was read or not.
    * @return the copied file.
    */
-  def copyResourceTo(to: File, name: String, classLoader: ClassLoader): File = {
-    val f = to / name
-    if (!f.exists()) {
-      val is = classLoader.getResourceAsStream(name)
-      try {
-        f.getParentFile.mkdirs()
-        IO.transfer(is, f)
-        f
-      } finally {
-        is.close()
-      }
-    } else {
-      f
+  def copyResourceTo(to: File, name: String, classLoader: ClassLoader, cacheDir: File): File = {
+    val url = classLoader.getResource(name)
+    if (url == null) {
+      throw new IllegalArgumentException("Couldn't find " + name)
+    }
+    val toFile = to / name
+
+    incremental.runIncremental(cacheDir, Seq(url)) { urls =>
+      (urls.map { u =>
+
+        // Find out which file will actually be read
+        val filesRead = if (u.getProtocol == "file") {
+          Set(new File(u.toURI))
+        } else if (u.getProtocol == "jar") {
+          Set(new File(u.getFile.split('!')(0)))
+        } else {
+          Set.empty[File]
+        }
+
+        val is = u.openStream()
+        try {
+          toFile.getParentFile.mkdirs()
+          IO.transfer(is, toFile)
+          u -> OpSuccess(filesRead, Set(toFile))
+        } finally {
+          is.close()
+        }
+      }.toMap, toFile)
     }
   }
 
