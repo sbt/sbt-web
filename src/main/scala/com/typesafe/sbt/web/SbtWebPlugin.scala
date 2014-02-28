@@ -74,6 +74,7 @@ object SbtWebPlugin extends sbt.Plugin {
     val webJarsPathLib = SettingKey[String]("web-extract-web-jars-path-sub", "The sub folder of the path to extract WebJars to", ASetting)
     val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
+    val extractWebJars = TaskKey[File]("web-jars-extract", "Extract webjars.")
     val webJars = TaskKey[Seq[PathMapping]]("web-jars", "Extracted webjars.")
 
     val assetTasks = SettingKey[Seq[Task[Seq[PathMapping]]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
@@ -179,12 +180,15 @@ object SbtWebPlugin extends sbt.Plugin {
     resourceDirectories := Seq(sourceDirectory.value, resourceDirectory.value),
     unmanagedResources := (resourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     webJarsPathLib := "lib",
-    webJars := {
+    extractWebJars := {
       withWebJarExtractor(webJarsPath.value / webJarsPathLib.value, webJarsCache.value, webJarsClassLoader.value) {
         (e, to) =>
           e.extractAllWebJarsTo(to)
       }
-      webJarsPath.value.***.filter(!_.isDirectory) pair relativeTo(webJarsPath.value)
+      webJarsPath.value
+    },
+    webJars := {
+      extractWebJars.value.***.filter(!_.isDirectory) pair relativeTo(extractWebJars.value)
     },
     assetTasks := Nil,
     assetMappings := assetTasks(_.join).map(_.flatten).value ++ webJars.value,
