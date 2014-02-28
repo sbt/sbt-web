@@ -39,6 +39,6 @@ val check = taskKey[Unit]("check the pipeline mappings")
 check := {
   val mappings = pipeline.value
   val paths = (mappings map (_._2)).toSet
-  val expected = Set("js/all.min.js", "coffee/a.coffee")
+  val expected = Set("js", "js/all.min.js", "coffee", "coffee/a.coffee")
   if (paths != expected) sys.error(s"Expected $expected but pipeline paths are $paths")
 }
