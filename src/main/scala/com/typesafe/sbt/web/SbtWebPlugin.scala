@@ -30,11 +30,11 @@ import com.typesafe.sbt.web.incremental.OpSuccess
  *   ------+ js
  *
  *   + target
- *   --+ public .......(resourceManaged in Assets)
+ *   --+ public .......(public in Assets)
  *   ----+ css
  *   ----+ images
  *   ----+ js
- *   --+ public-test ..(resourceManaged in TestAssets)
+ *   --+ public-test ..(public in TestAssets)
  *   ----+ css
  *   ----+ images
  *   ----+ js
@@ -48,9 +48,9 @@ import com.typesafe.sbt.web.incremental.OpSuccess
  *
  * In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
  * files become public. For example a coffeescript plugin would use files from "unmanagedSources in Assets" and produce them to
- * "resourceManaged in Assets".
+ * "public in Assets".
  *
- * All assets be them subject to processing or static in nature, will be copied to the resourceManaged destinations.
+ * All assets be them subject to processing or static in nature, will be copied to the public destinations.
  *
  * How files are organised within "assets" or "public" is subject to the taste of the developer, their team and
  * conventions at large.
@@ -66,6 +66,8 @@ object SbtWebPlugin extends sbt.Plugin {
     val TestAssets = config("web-assets-test")
     val Plugin = config("web-plugin")
 
+    val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
+
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
 
@@ -78,9 +80,6 @@ object SbtWebPlugin extends sbt.Plugin {
     val extractWebJars = TaskKey[File]("web-jars-extract", "Extract webjars.")
     val webJars = TaskKey[Seq[PathMapping]]("web-jars", "Extracted webjars.")
 
-    val assetTasks = SettingKey[Seq[Task[Seq[PathMapping]]]]("web-all-asset-tasks", "All of the tasks for producing web assets")
-    val rawAssets = TaskKey[Seq[PathMapping]]("web-raw-assets", "Maps which assets should be copied as is from the assets directory")
-    val assetMappings = TaskKey[Seq[PathMapping]]("web-all-asset-mappings", "The input mappings for the all assets task.")
     val assets = TaskKey[File]("web-all-assets", "All of the web assets.")
 
     val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
@@ -100,23 +99,25 @@ object SbtWebPlugin extends sbt.Plugin {
 
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
-    sourceDirectories in Assets := (unmanagedSourceDirectories in Assets).value,
-    sourceDirectories in TestAssets := (unmanagedSourceDirectories in TestAssets).value,
+    sourceManaged in Assets := target.value / "assets-managed",
+    sourceManaged in TestAssets := target.value / "test-assets-managed",
 
     jsFilter in Assets := GlobFilter("*.js"),
     jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
 
     resourceDirectory in Assets := (sourceDirectory in Compile).value / "public",
     resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
-    resourceManaged in Assets := target.value / "public",
-    resourceManaged in TestAssets := target.value / "public-test",
+    resourceManaged in Assets := target.value / "public-managed",
+    resourceManaged in TestAssets := target.value / "public-test-managed",
+
+    public in Assets := target.value / "public",
+    public in TestAssets := target.value / "public-test",
 
     nodeModulesPath in Assets := target.value / "node-modules",
     nodeModulesPath in TestAssets := target.value / "node-modules-test",
     nodeModulesPath in Plugin := (target in Plugin).value / "node-modules",
 
-    webJarsPath in Assets := target.value / "webjars",
-    webJarsPath in TestAssets := target.value / "webjars-test",
+    webJarsPathLib := "lib",
     webJarsCache in Assets := target.value / "webjars.cache",
     webJarsCache in TestAssets := target.value / "webjars-test.cache",
     webJarsCache in Plugin := (target in Plugin).value / "webjars-plugin.cache",
@@ -133,15 +134,15 @@ object SbtWebPlugin extends sbt.Plugin {
     assets in Assets := {
       syncMappings(
         streams.value.cacheDirectory,
-        (assetMappings in Assets).value,
-        (resourceManaged in Assets).value
+        (mappings in Assets).value,
+        (public in Assets).value
       )
     },
     assets in TestAssets := {
       syncMappings(
         streams.value.cacheDirectory,
-        (assetMappings in Assets).value ++ (assetMappings in TestAssets).value,
-        (resourceManaged in TestAssets).value
+        (mappings in Assets).value ++ (mappings in TestAssets).value,
+        (public in TestAssets).value
       )
     },
 
@@ -163,7 +164,7 @@ object SbtWebPlugin extends sbt.Plugin {
 
     stages := Seq.empty,
     allStages <<= Pipeline.chain(stages),
-    pipeline := allStages.value((assetMappings in Assets).value),
+    pipeline := allStages.value((mappings in Assets).value),
 
     baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
     target in Plugin := (baseDirectory in Plugin).value / "target",
@@ -176,13 +177,28 @@ object SbtWebPlugin extends sbt.Plugin {
 
 
   val unscopedAssetSettings: Seq[Setting[_]] = Seq(
-    unmanagedSourceDirectories := Seq(sourceDirectory.value),
-    unmanagedResourceDirectories := Seq(resourceDirectory.value),
     includeFilter := GlobFilter("*"),
+
+    sourceGenerators := Nil,
+    managedSourceDirectories := Nil,
+    managedSources := sourceGenerators(_.join).map(_.flatten).value,
+    unmanagedSourceDirectories := Seq(sourceDirectory.value),
     unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
-    resourceDirectories := unmanagedSourceDirectories.value ++ unmanagedResourceDirectories.value,
+    sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
+    sources := managedSources.value ++ unmanagedSources.value,
+
+    resourceGenerators := Nil,
+    resourceGenerators <+= Def.task {
+      webJars.value.map(_._1)
+    },
+    unmanagedResourceDirectories := Seq(resourceDirectory.value),
     unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
-    webJarsPathLib := "lib",
+    managedResourceDirectories := Seq(webJarsPath.value),
+    managedResources := resourceGenerators(_.join).map(_.flatten).value,
+    resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
+    resources := managedResources.value ++ unmanagedResources.value,
+
+    webJarsPath := sourceManaged.value / "webjars",
     extractWebJars := {
       withWebJarExtractor(webJarsPath.value / webJarsPathLib.value, webJarsCache.value, webJarsClassLoader.value) {
         (e, to) =>
@@ -190,17 +206,13 @@ object SbtWebPlugin extends sbt.Plugin {
       }
       webJarsPath.value
     },
-    webJars := {
-      extractWebJars.value.*** pair(relativeTo(extractWebJars.value), errorIfNone = false)
+    webJars := extractWebJars.value.*** pair(relativeTo(extractWebJars.value), errorIfNone = false),
+
+    mappings := {
+      val files = (sources.value ++ resources.value) --- (sourceDirectories.value ++ resourceDirectories.value)
+      files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value) | flat
     },
-    rawAssets := {
-      (unmanagedSourceDirectories.value ++ unmanagedResourceDirectories.value).flatMap { dir: File =>
-        (dir ** (includeFilter.value -- excludeFilter.value)).pair(relativeTo(dir), errorIfNone = false)
-      }
-    },
-    assetTasks := Nil,
-    assetTasks <+= rawAssets,
-    assetMappings := assetTasks(_.join).map(_.flatten).value.distinct ++ webJars.value,
+
     compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
   )
 
@@ -251,27 +263,29 @@ object SbtWebPlugin extends sbt.Plugin {
     }
     val toFile = to / name
 
-    incremental.runIncremental(cacheDir, Seq(url)) { urls =>
-      (urls.map { u =>
+    incremental.runIncremental(cacheDir, Seq(url)) {
+      urls =>
+        (urls.map {
+          u =>
 
-        // Find out which file will actually be read
-        val filesRead = if (u.getProtocol == "file") {
-          Set(new File(u.toURI))
-        } else if (u.getProtocol == "jar") {
-          Set(new File(u.getFile.split('!')(0)))
-        } else {
-          Set.empty[File]
-        }
+          // Find out which file will actually be read
+            val filesRead = if (u.getProtocol == "file") {
+              Set(new File(u.toURI))
+            } else if (u.getProtocol == "jar") {
+              Set(new File(u.getFile.split('!')(0)))
+            } else {
+              Set.empty[File]
+            }
 
-        val is = u.openStream()
-        try {
-          toFile.getParentFile.mkdirs()
-          IO.transfer(is, toFile)
-          u -> OpSuccess(filesRead, Set(toFile))
-        } finally {
-          is.close()
-        }
-      }.toMap, toFile)
+            val is = u.openStream()
+            try {
+              toFile.getParentFile.mkdirs()
+              IO.transfer(is, toFile)
+              u -> OpSuccess(filesRead, Set(toFile))
+            } finally {
+              is.close()
+            }
+        }.toMap, toFile)
     }
   }
 
