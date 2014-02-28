@@ -191,16 +191,16 @@ object SbtWebPlugin extends sbt.Plugin {
       webJarsPath.value
     },
     webJars := {
-      extractWebJars.value.***.filter(!_.isDirectory) pair relativeTo(extractWebJars.value)
+      extractWebJars.value.*** pair(relativeTo(extractWebJars.value), errorIfNone = false)
     },
     rawAssets := {
       (unmanagedSourceDirectories.value ++ unmanagedResourceDirectories.value).flatMap { dir: File =>
-        (dir ** (includeFilter.value -- excludeFilter.value)).pair(relativeTo(dir), false)
+        (dir ** (includeFilter.value -- excludeFilter.value)).pair(relativeTo(dir), errorIfNone = false)
       }
     },
     assetTasks := Nil,
     assetTasks <+= rawAssets,
-    assetMappings := assetTasks(_.join).map(_.flatten).value ++ webJars.value,
+    assetMappings := assetTasks(_.join).map(_.flatten).value.distinct ++ webJars.value,
     compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
   )
 
