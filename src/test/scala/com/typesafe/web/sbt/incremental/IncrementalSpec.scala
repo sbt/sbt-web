@@ -308,6 +308,26 @@ class IncrementalSpec extends Specification {
       }
     }
 
+    "rerun an op if the op hasher returns NoCache" in {
+      IO.withTemporaryDirectory { tmpDir =>
+
+        implicit val hasher = OpInputHasher.noCache[String]
+
+        runIncremental(tmpDir, List("op1")) { prunedOps =>
+          (
+            Map("op1" -> OpSuccess(filesRead = Set.empty, filesWritten = Set.empty)),
+            prunedOps must_== List("op1")
+            )
+        }
+        runIncremental(tmpDir, List("op1")) { prunedOps =>
+          (
+            Map("op1" -> OpSuccess(filesRead = Set.empty, filesWritten = Set.empty)),
+            prunedOps must_== List("op1")
+            )
+        }
+      }
+    }
+
     "fail when runOps gives result for unknown op" in {
       IO.withTemporaryDirectory { tmpDir =>
         runIncremental(tmpDir, List("op1")) { prunedOps =>

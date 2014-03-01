@@ -76,7 +76,7 @@ private[incremental] object OpCache {
    * Remove all operations from the cache that aren't in the given set of operations.
    */
   def vacuumExcept[Op](cache: OpCache, opsToKeep: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Unit = {
-    val oihSet: Set[OpInputHash] = opsToKeep.map(opInputHasher.hash).to[Set]
+    val oihSet: Set[OpInputHashResult] = opsToKeep.map(opInputHasher.hash).to[Set]
     for (oih <- cache.allOpInputHashes) yield {
       if (!oihSet.contains(oih)) {
         cache.removeRecord(oih)
@@ -90,9 +90,11 @@ private[incremental] object OpCache {
    * are in the cache but have changed.
    */
   def newOrChanged[Op](cache: OpCache, ops: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Seq[Op] = {
-    val opsAndHashes: Seq[(Op, OpInputHash)] = ops.map(w => (w, opInputHasher.hash(w)))
+    val opsAndHashes: Seq[(Op, OpInputHashResult)] = ops.map(w => (w, opInputHasher.hash(w)))
     opsAndHashes.filter {
-      case (_, wh) =>
+      case (_, NoCache) =>
+        true
+      case (_, wh: OpInputHash) =>
         cache.getRecord(wh).fold(true) { record =>
           // Check that cached file hashes are up to date
           val fileChanged = OpCache.anyFileChanged(record.fileHashes)
@@ -121,7 +123,10 @@ private[incremental] object OpCache {
    */
   def cacheResults[Op](cache: OpCache, results: Map[Op, OpResult])(implicit opInputHasher: OpInputHasher[Op]): Unit = {
     for ((op, or) <- results) {
-      cacheResult(cache, opInputHasher.hash(op), or)
+      opInputHasher.hash(op) match {
+        case NoCache => // Don't cache
+        case hash: OpInputHash => cacheResult(cache, hash, or)
+      }
     }
   }
 
