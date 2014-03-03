@@ -4,7 +4,7 @@ import com.typesafe.sbt.web.PathMapping
 
 webSettings
 
-val coffee = taskKey[Seq[PathMapping]]("mock coffeescript processing")
+val coffee = taskKey[Seq[File]]("mock coffeescript processing")
 
 coffee := {
   // translate .coffee files into .js files
@@ -13,12 +13,12 @@ coffee := {
   val sources = sourceDir ** "*.coffee"
   val mappings = sources pair relativeTo(sourceDir)
   val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
-  val copies = renamed map { case (file, path) => file -> (targetDir / path) }
+  val copies = renamed map { case (file, path) => file -> (resourceManaged in WebKeys.Assets).value / path }
   IO.copy(copies)
-  mappings ++ (copies map { case (s, t) => t} pair relativeTo(targetDir))
+  copies map (_._2)
 }
 
-assetTasks in Assets <+= coffee
+sourceGenerators in Assets <+= coffee
 
 val jsmin = taskKey[Pipeline.Stage]("mock js minifier")
 
