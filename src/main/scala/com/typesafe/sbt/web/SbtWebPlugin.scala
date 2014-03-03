@@ -180,7 +180,10 @@ object SbtWebPlugin extends sbt.Plugin {
     includeFilter := GlobFilter("*"),
 
     sourceGenerators := Nil,
-    managedSourceDirectories := Nil,
+    sourceGenerators <+= Def.task {
+      webJars.value.map(_._1)
+    },
+    managedSourceDirectories := Seq(webJarsPath.value),
     managedSources := sourceGenerators(_.join).map(_.flatten).value,
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
     unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
@@ -191,10 +194,10 @@ object SbtWebPlugin extends sbt.Plugin {
     resourceGenerators <+= Def.task {
       webJars.value.map(_._1)
     },
-    unmanagedResourceDirectories := Seq(resourceDirectory.value),
-    unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     managedResourceDirectories := Seq(webJarsPath.value),
     managedResources := resourceGenerators(_.join).map(_.flatten).value,
+    unmanagedResourceDirectories := Seq(resourceDirectory.value),
+    unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
 
