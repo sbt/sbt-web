@@ -75,7 +75,7 @@ object SbtWebPlugin extends sbt.Plugin {
     val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
 
     val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web based resources.")
-    val webModuleDirectories = SettingKey[Seq[File]]("web-directories", "The list of directories that web modules are to expand into.")
+    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web modules are to expand into.")
     val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web modules.")
     val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web modules to")
     val webModules = TaskKey[Seq[File]]("web-modules", "All web module files.")
