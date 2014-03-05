@@ -5,7 +5,7 @@ $ exists target/public/lib/prototype/prototype.js
 
 # Extract node modules
 > web-assets:web-node-modules
-$ exists target/node-modules/less/package.json
+$ exists target/node-modules/webjars/less/package.json
 
 > clean
 
