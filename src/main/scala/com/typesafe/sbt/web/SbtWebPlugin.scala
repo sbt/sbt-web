@@ -60,8 +60,6 @@ object SbtWebPlugin extends sbt.Plugin {
 
   object WebKeys {
 
-    import sbt.KeyRanks._
-
     val Assets = config("web-assets")
     val TestAssets = config("web-assets-test")
     val Plugin = config("web-plugin")
@@ -71,14 +69,21 @@ object SbtWebPlugin extends sbt.Plugin {
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
 
-    val nodeModulesPath = SettingKey[File]("web-extract-node-modules-path", "The path to extract WebJar node modules to", ASetting)
-    val nodeModules = TaskKey[File]("web-node-modules", "The location of extracted node modules for all related webjars.")
-    val webJarsPath = SettingKey[File]("web-extract-web-jars-path", "The path to extract WebJars to", ASetting)
-    val webJarsPathLib = SettingKey[String]("web-extract-web-jars-path-sub", "The sub folder of the path to extract WebJars to", ASetting)
-    val webJarsCache = SettingKey[File]("web-extract-web-jars-cache", "The path for the webjars extraction cache file", CSetting)
-    val webJarsClassLoader = TaskKey[ClassLoader]("web-extract-web-jars-classloader", "The classloader to extract WebJars from", CTask)
-    val extractWebJars = TaskKey[File]("web-jars-extract", "Extract webjars.")
-    val webJars = TaskKey[Seq[PathMapping]]("web-jars", "Extracted webjars.")
+    val nodeModuleDirectory = SettingKey[File]("web-node-module-directory", "Default node modules directory, used for node based resources.")
+    val nodeModuleDirectories = SettingKey[Seq[File]]("web-node-module-directories", "The list of directories that node modules are to expand into.")
+    val nodeModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-node-module-generators", "List of tasks that generate node modules.")
+    val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
+
+    val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web based resources.")
+    val webModuleDirectories = SettingKey[Seq[File]]("web-directories", "The list of directories that web modules are to expand into.")
+    val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web modules.")
+    val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web modules to")
+    val webModules = TaskKey[Seq[File]]("web-modules", "All web module files.")
+
+    val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
+    val webJarsDirectory = SettingKey[File]("web-jars-directory", "The path to extract WebJars to")
+    val webJarsCache = SettingKey[File]("web-jars-cache", "The path for the webjars extraction cache file")
+    val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
 
     val assets = TaskKey[File]("web-all-assets", "All of the web assets.")
 
@@ -113,11 +118,14 @@ object SbtWebPlugin extends sbt.Plugin {
     public in Assets := target.value / "public",
     public in TestAssets := target.value / "public-test",
 
-    nodeModulesPath in Assets := target.value / "node-modules",
-    nodeModulesPath in TestAssets := target.value / "node-modules-test",
-    nodeModulesPath in Plugin := (target in Plugin).value / "node-modules",
+    nodeModuleDirectory in Assets := target.value / "node-modules",
+    nodeModuleDirectory in TestAssets := target.value / "node-modules-test",
+    nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
 
-    webJarsPathLib := "lib",
+    webModuleDirectory in Assets := target.value / "web-modules",
+    webModuleDirectory in TestAssets := target.value / "web-modules-test",
+    webModulesLib := "lib",
+
     webJarsCache in Assets := target.value / "webjars.cache",
     webJarsCache in TestAssets := target.value / "webjars-test.cache",
     webJarsCache in Plugin := (target in Plugin).value / "webjars-plugin.cache",
@@ -180,10 +188,7 @@ object SbtWebPlugin extends sbt.Plugin {
     includeFilter := GlobFilter("*"),
 
     sourceGenerators := Nil,
-    sourceGenerators <+= Def.task {
-      webJars.value.map(_._1)
-    },
-    managedSourceDirectories := Seq(webJarsPath.value),
+    managedSourceDirectories := Nil,
     managedSources := sourceGenerators(_.join).map(_.flatten).value,
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
     unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
@@ -191,41 +196,46 @@ object SbtWebPlugin extends sbt.Plugin {
     sources := managedSources.value ++ unmanagedSources.value,
 
     resourceGenerators := Nil,
-    resourceGenerators <+= Def.task {
-      webJars.value.map(_._1)
-    },
-    managedResourceDirectories := Seq(webJarsPath.value),
+    managedResourceDirectories := Nil,
     managedResources := resourceGenerators(_.join).map(_.flatten).value,
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
     unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
 
-    webJarsPath := sourceManaged.value / "webjars",
-    extractWebJars := {
-      withWebJarExtractor(webJarsPath.value / webJarsPathLib.value, webJarsCache.value, webJarsClassLoader.value) {
+    webModuleGenerators := Nil,
+    webModuleGenerators <+= Def.task {
+      withWebJarExtractor(webJarsDirectory.value / webModulesLib.value, webJarsCache.value, webJarsClassLoader.value) {
         (e, to) =>
           e.extractAllWebJarsTo(to)
       }
-      webJarsPath.value
+      webJarsDirectory.value.***.get
     },
-    webJars := extractWebJars.value.*** pair(relativeTo(extractWebJars.value), errorIfNone = false),
+    webModuleDirectories := Seq(webJarsDirectory.value),
+    webModules := webModuleGenerators(_.join).map(_.flatten).value,
+
+    webJarsDirectory := webModuleDirectory.value / "webjars",
 
     mappings := {
-      val files = (sources.value ++ resources.value) --- (sourceDirectories.value ++ resourceDirectories.value)
-      files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value) | flat
+      val files = (sources.value ++ resources.value ++ webModules.value) ---
+        (sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value)
+      files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
     },
 
     compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
   )
 
   val nodeModulesSettings = Seq(
-    nodeModules := {
-      withWebJarExtractor(nodeModulesPath.value, webJarsCache.value, webJarsClassLoader.value) {
+    webJarsNodeModulesDirectory := nodeModuleDirectory.value / "webjars",
+    nodeModuleGenerators := Nil,
+    nodeModuleGenerators <+= Def.task {
+      withWebJarExtractor(webJarsNodeModulesDirectory.value, webJarsCache.value, webJarsClassLoader.value) {
         (e, to) =>
           e.extractAllNodeModulesTo(to)
-      }
-    }
+      }.***.get
+    },
+    nodeModuleDirectories := Seq(webJarsNodeModulesDirectory.value),
+    nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
   private def syncMappings(cacheDir: File, mappings: Seq[PathMapping], target: File): File = {
