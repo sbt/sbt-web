@@ -14,9 +14,9 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
+  "org.webjars" % "webjars-locator" % "0.12",
   "org.specs2" %% "specs2" % "2.2.2" % "test",
-  "junit" % "junit" % "4.11" % "test",
-  "org.webjars" % "webjars-locator" % "0.12"
+  "junit" % "junit" % "4.11" % "test"
   )
 
 publishMavenStyle := false
