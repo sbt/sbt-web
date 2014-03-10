@@ -1,6 +1,8 @@
 sbt-web
 =======
 
+[![Build Status](https://api.travis-ci.org/sbt/sbt-web.png?branch=master)](https://travis-ci.org/sbt/sbt-web)
+
 This project provides the building blocks for web oriented sbt plugins by bringing together the following concerns:
 
 * File directory layout conventions for resources intended to be served by a web server (otherwise known as assets)
