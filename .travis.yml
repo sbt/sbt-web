@@ -1,2 +1,2 @@
 language: scala
-script: sbt test
+script: sbt test scripted
