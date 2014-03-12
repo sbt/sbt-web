@@ -208,9 +208,7 @@ object SbtWebPlugin extends sbt.Plugin {
       val files = (sources.value ++ resources.value ++ webModules.value) ---
         (sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value)
       files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
-    },
-
-    compile := Def.task(inc.Analysis.Empty).dependsOn(assets).value
+    }
   )
 
   val nodeModulesSettings = Seq(
