@@ -1,11 +1,11 @@
 # Extract everything
 > web-assets:web-all-assets
-$ exists target/public/lib/jquery/jquery.js
-$ exists target/public/lib/prototype/prototype.js
+$ exists target/web/public/main/lib/jquery/jquery.js
+$ exists target/web/public/main/lib/prototype/prototype.js
 
 # Extract node modules
 > web-assets:web-node-modules
-$ exists target/node-modules/webjars/less/package.json
+$ exists target/web/node-modules/main/webjars/less/package.json
 
 > clean
 
@@ -18,5 +18,5 @@ $ touch target/foo
 $ sleep 1
 > web-assets:web-all-assets
 # jquery.js should not have been re-extracted, assert that it is older
-$ newer target/foo target/public/lib/jquery/jquery.js
+$ newer target/foo target/web/public/main/lib/jquery/jquery.js
 

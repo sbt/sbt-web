@@ -30,14 +30,16 @@ import com.typesafe.sbt.web.incremental.OpSuccess
  *   ------+ js
  *
  *   + target
- *   --+ public .......(public in Assets)
- *   ----+ css
- *   ----+ images
- *   ----+ js
- *   --+ public-test ..(public in TestAssets)
- *   ----+ css
- *   ----+ images
- *   ----+ js
+ *   --+ web
+ *   ----+ public
+ *   ------+ main
+ *   --------+ css
+ *   --------+ images
+ *   --------+ js
+ *   ------+ test
+ *   --------+ css
+ *   --------+ images
+ *   --------+ js
  * }}}
  *
  * The plugin introduces the notion of "assets" to sbt. Assets are public resources that are intended for client-side
@@ -65,6 +67,7 @@ object SbtWebPlugin extends sbt.Plugin {
     val Plugin = config("web-plugin")
 
     val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
+    val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
 
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
     val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
@@ -105,33 +108,37 @@ object SbtWebPlugin extends sbt.Plugin {
   def webSettings: Seq[Setting[_]] = Seq(
     reporter := new LoggerReporter(5, streams.value.log),
 
+    webTarget := target.value / "web",
+
     sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
     sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
-    sourceManaged in Assets := target.value / "assets-managed",
-    sourceManaged in TestAssets := target.value / "test-assets-managed",
+    sourceManaged in Assets := webTarget.value / "assets-managed" / "main",
+    sourceManaged in TestAssets := webTarget.value / "assets-managed" / "test",
 
     jsFilter in Assets := GlobFilter("*.js"),
     jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
 
     resourceDirectory in Assets := (sourceDirectory in Compile).value / "public",
     resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
-    resourceManaged in Assets := target.value / "public-managed",
-    resourceManaged in TestAssets := target.value / "public-test-managed",
+    resourceManaged in Assets := webTarget.value / "resources-managed" / "main",
+    resourceManaged in TestAssets := webTarget.value / "resources-managed" / "test",
 
-    public in Assets := target.value / "public",
-    public in TestAssets := target.value / "public-test",
+    public in Assets := webTarget.value / "public" / "main",
+    public in TestAssets := webTarget.value / "public" / "test",
 
-    nodeModuleDirectory in Assets := target.value / "node-modules",
-    nodeModuleDirectory in TestAssets := target.value / "node-modules-test",
+    nodeModuleDirectory in Assets := webTarget.value / "node-modules" / "main",
+    nodeModuleDirectory in TestAssets := webTarget.value / "node-modules" / "test",
     nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
 
-    webModuleDirectory in Assets := target.value / "web-modules",
-    webModuleDirectory in TestAssets := target.value / "web-modules-test",
+    webModuleDirectory in Assets := webTarget.value / "web-modules" / "main",
+    webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
-    webJarsCache in Assets := target.value / "webjars.cache",
-    webJarsCache in TestAssets := target.value / "webjars-test.cache",
-    webJarsCache in Plugin := (target in Plugin).value / "webjars-plugin.cache",
+    webJarsCache in webJars in Assets := webTarget.value / "web-modules" / "webjars-main.cache",
+    webJarsCache in webJars in TestAssets := webTarget.value / "web-modules" / "webjars-test.cache",
+    webJarsCache in nodeModules in Assets := webTarget.value / "node-modules" / "webjars-main.cache",
+    webJarsCache in nodeModules in TestAssets := webTarget.value / "node-modules" / "webjars-test.cache",
+    webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
     webJarsClassLoader in Assets := new URLClassLoader((dependencyClasspath in Compile).value.map(_.data.toURI.toURL), null),
     webJarsClassLoader in TestAssets := new URLClassLoader((dependencyClasspath in Test).value.map(_.data.toURI.toURL), null),
     webJarsClassLoader in Plugin := SbtWebPlugin.getClass.getClassLoader,
@@ -202,7 +209,7 @@ object SbtWebPlugin extends sbt.Plugin {
     webModules := webModuleGenerators(_.join).map(_.flatten).value,
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
-    webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, webJarsCache.value, webJarsClassLoader.value),
+    webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
 
     mappings := {
       val files = (sources.value ++ resources.value ++ webModules.value) ---
@@ -213,7 +220,7 @@ object SbtWebPlugin extends sbt.Plugin {
 
   val nodeModulesSettings = Seq(
     webJarsNodeModulesDirectory := nodeModuleDirectory.value / "webjars",
-    webJarsNodeModules := generateNodeWebJars(webJarsNodeModulesDirectory.value, webJarsCache.value, webJarsClassLoader.value),
+    webJarsNodeModules := generateNodeWebJars(webJarsNodeModulesDirectory.value, (webJarsCache in nodeModules).value, webJarsClassLoader.value),
 
     nodeModuleGenerators := Nil,
     nodeModuleGenerators <+= webJarsNodeModules,
