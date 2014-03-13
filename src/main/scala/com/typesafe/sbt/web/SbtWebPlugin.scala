@@ -7,6 +7,7 @@ import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.OpSuccess
+import sbt.plugins.JvmModule
 
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
@@ -58,7 +59,9 @@ import com.typesafe.sbt.web.incremental.OpSuccess
  * conventions at large.
  */
 
-object SbtWebPlugin extends sbt.Plugin {
+object SbtWebPlugin extends AutoPlugin {
+
+  def select = JvmModule
 
   object WebKeys {
 
@@ -105,7 +108,7 @@ object SbtWebPlugin extends sbt.Plugin {
     onUnload in Global := (onUnload in Global).value andThen unload
   )
 
-  def webSettings: Seq[Setting[_]] = Seq(
+  override def projectSettings: Seq[Setting[_]] = Seq(
     reporter := new LoggerReporter(5, streams.value.log),
 
     webTarget := target.value / "web",

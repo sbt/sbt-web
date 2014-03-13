@@ -2,18 +2,16 @@ import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.SbtWebPlugin.WebKeys._
 import com.typesafe.sbt.web.PathMapping
 
-webSettings
-
 val coffee = taskKey[Seq[File]]("mock coffeescript processing")
 
 coffee := {
   // translate .coffee files into .js files
-  val sourceDir = (sourceDirectory in WebKeys.Assets).value
+  val sourceDir = (sourceDirectory in Assets).value
   val targetDir = target.value / "cs-plugin"
   val sources = sourceDir ** "*.coffee"
   val mappings = sources pair relativeTo(sourceDir)
   val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
-  val copies = renamed map { case (file, path) => file -> (resourceManaged in WebKeys.Assets).value / path }
+  val copies = renamed map { case (file, path) => file -> (resourceManaged in Assets).value / path }
   IO.copy(copies)
   copies map (_._2)
 }
