@@ -91,7 +91,7 @@ object SbtWebPlugin extends sbt.Plugin {
     val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
     val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
 
-    val assets = TaskKey[File]("web-all-assets", "All of the web assets.")
+    val assets = TaskKey[File]("assets", "All of the web assets.")
 
     val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
     val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
@@ -153,6 +153,7 @@ object SbtWebPlugin extends sbt.Plugin {
       (mappings in Assets).value ++ (mappings in TestAssets).value,
       (public in TestAssets).value
     ),
+    assets := (assets in Assets).value,
 
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
@@ -160,10 +161,6 @@ object SbtWebPlugin extends sbt.Plugin {
 
     test in TestAssets :=(),
     test in TestAssets <<= (test in TestAssets).dependsOn(compile in TestAssets),
-
-    compile in Compile <<= (compile in Compile).dependsOn(compile in Assets),
-    compile in Test <<= (compile in Test).dependsOn(compile in TestAssets),
-    test in Test <<= (test in Test).dependsOn(test in TestAssets),
 
     watchSources <++= unmanagedSources in Assets,
     watchSources <++= unmanagedSources in TestAssets,
