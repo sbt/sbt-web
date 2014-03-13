@@ -2,6 +2,7 @@
 > assets
 $ exists target/web/public/main/lib/jquery/jquery.js
 $ exists target/web/public/main/lib/prototype/prototype.js
+-$ exists target/web/public/main/lib/requirejs/require.js
 
 # Extract node modules
 > web-assets:web-node-modules
@@ -20,3 +21,17 @@ $ sleep 1
 # jquery.js should not have been re-extracted, assert that it is older
 $ newer target/foo target/web/public/main/lib/jquery/jquery.js
 
+> clean
+
+# Test assets
+> web-assets-test:assets
+
+# First check that test webjars and only test webjars were extracted
+$ exists target/web/web-modules/test/webjars/lib/requirejs/require.js
+-$ exists target/web/web-modules/test/webjars/lib/jquery/jquery.js
+-$ exists target/web/web-modules/test/webjars/lib/prototype/prototype.js
+
+# Now check everything was aggregated in test assets
+$ exists target/web/public/test/lib/jquery/jquery.js
+$ exists target/web/public/test/lib/prototype/prototype.js
+$ exists target/web/public/test/lib/requirejs/require.js

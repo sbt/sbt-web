@@ -140,7 +140,16 @@ object SbtWebPlugin extends sbt.Plugin {
     webJarsCache in nodeModules in TestAssets := webTarget.value / "node-modules" / "webjars-test.cache",
     webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
     webJarsClassLoader in Assets := new URLClassLoader((dependencyClasspath in Compile).value.map(_.data.toURI.toURL), null),
-    webJarsClassLoader in TestAssets := new URLClassLoader((dependencyClasspath in Test).value.map(_.data.toURI.toURL), null),
+    webJarsClassLoader in TestAssets := {
+      // Exclude webjars from compile, because they are already extracted to assets
+      val isCompileDep: Set[File] = (dependencyClasspath in Compile).value.map(_.data).toSet
+      val testClasspath: Classpath = (dependencyClasspath in Test).value
+      val urls = testClasspath.collect {
+        case dep if !isCompileDep(dep.data) => dep.data.toURI.toURL
+      }
+
+      new URLClassLoader(urls, null)
+    },
     webJarsClassLoader in Plugin := SbtWebPlugin.getClass.getClassLoader,
 
     assets in Assets := syncMappings(
