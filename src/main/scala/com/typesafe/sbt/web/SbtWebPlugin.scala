@@ -237,14 +237,6 @@ object SbtWebPlugin extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
-  private def syncMappings(cacheDir: File, mappings: Seq[PathMapping], target: File): File = {
-    val cache = cacheDir / "sync-mappings"
-    val copies = mappings map {
-      case (file, path) => file -> (target / path)
-    }
-    Sync(cache)(copies)
-    target
-  }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {
@@ -268,6 +260,25 @@ object SbtWebPlugin extends AutoPlugin {
         e.extractAllWebJarsTo(to)
     }
     target.***.get
+  }
+
+
+  // Mapping synchronization
+
+  /**
+   * Efficiently synchronize a sequence of mappings with a target folder.
+   * @param cacheDir the cache directory.
+   * @param mappings the mappings to sync.
+   * @param target  the destination directory to sync to.
+   * @return the target value
+   */
+  def syncMappings(cacheDir: File, mappings: Seq[PathMapping], target: File): File = {
+    val cache = cacheDir / "sync-mappings"
+    val copies = mappings map {
+      case (file, path) => file -> (target / path)
+    }
+    Sync(cache)(copies)
+    target
   }
 
   // Resource extract API
