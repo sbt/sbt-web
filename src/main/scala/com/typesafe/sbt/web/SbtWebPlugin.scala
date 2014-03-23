@@ -41,6 +41,7 @@ import sbt.plugins.JvmModule
  *   --------+ css
  *   --------+ images
  *   --------+ js
+ *   ----+ stage
  * }}}
  *
  * The plugin introduces the notion of "assets" to sbt. Assets are public resources that are intended for client-side
@@ -57,6 +58,9 @@ import sbt.plugins.JvmModule
  *
  * How files are organised within "assets" or "public" is subject to the taste of the developer, their team and
  * conventions at large.
+ *
+ * The "stage" directory is product of processing the asset pipeline and results in files prepared for deployment
+ * to a web server.
  */
 
 object SbtWebPlugin extends AutoPlugin {
@@ -96,9 +100,13 @@ object SbtWebPlugin extends AutoPlugin {
 
     val assets = TaskKey[File]("assets", "All of the web assets.")
 
-    val stages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-stages", "Sequence of tasks for the asset pipeline stages.")
-    val allStages = TaskKey[Pipeline.Stage]("web-all-stages", "All asset pipeline stages chained together.")
+    val pipelineStages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-pipeline-stages", "Sequence of tasks for the asset pipeline stages.")
+    val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
+
+    val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
+    val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
+
   }
 
   import WebKeys._
@@ -179,9 +187,16 @@ object SbtWebPlugin extends AutoPlugin {
     watchSources <++= unmanagedResources in Assets,
     watchSources <++= unmanagedResources in TestAssets,
 
-    stages := Seq.empty,
-    allStages <<= Pipeline.chain(stages),
-    pipeline := allStages.value((mappings in Assets).value),
+    pipelineStages := Seq.empty,
+    allPipelineStages <<= Pipeline.chain(pipelineStages),
+    pipeline := allPipelineStages.value((mappings in Assets).value),
+
+    stagingDirectory := webTarget.value / "stage",
+    stage := syncMappings(
+      streams.value.cacheDirectory,
+      pipeline.value,
+      stagingDirectory.value
+    ),
 
     baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
     target in Plugin := (baseDirectory in Plugin).value / "target",
