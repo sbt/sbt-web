@@ -1,6 +1,6 @@
-import com.typesafe.sbt.web.SbtWebPlugin
+import com.typesafe.sbt.web.SbtWeb
 
-val root = project.in(file(".")).addPlugins(SbtWebPlugin)
+val root = project.in(file(".")).addPlugins(SbtWeb)
 
 libraryDependencies ++= Seq(
   "org.webjars" % "jquery" % "2.0.3-1"

@@ -63,7 +63,7 @@ import sbt.plugins.JvmModule
  * to a web server.
  */
 
-object SbtWebPlugin extends AutoPlugin {
+object SbtWeb extends AutoPlugin {
 
   object WebKeys {
 
@@ -159,7 +159,7 @@ object SbtWebPlugin extends AutoPlugin {
 
       new URLClassLoader(urls, null)
     },
-    webJarsClassLoader in Plugin := SbtWebPlugin.getClass.getClassLoader,
+    webJarsClassLoader in Plugin := SbtWeb.getClass.getClassLoader,
 
     assets in Assets := syncMappings(
       streams.value.cacheDirectory,
