@@ -1,6 +1,9 @@
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.SbtWebPlugin.WebKeys._
 import com.typesafe.sbt.web.PathMapping
+import com.typesafe.sbt.web.SbtWebPlugin
+
+lazy val root = project.in(file(".")).addPlugins(SbtWebPlugin)
 
 val coffee = taskKey[Seq[File]]("mock coffeescript processing")
 

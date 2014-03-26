@@ -65,8 +65,6 @@ import sbt.plugins.JvmModule
 
 object SbtWebPlugin extends AutoPlugin {
 
-  def select = JvmModule
-
   object WebKeys {
 
     val Assets = config("web-assets")
