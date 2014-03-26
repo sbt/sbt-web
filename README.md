@@ -38,32 +38,38 @@ The following directory layout is declared by sbt-web with an indication of the 
     ------+ js
  
     + target
-    --+ public .......(resourceManaged in Assets)
-    ----+ css
-    ----+ images
-    ----+ js
-    --+ public-test ..(resourceManaged in TestAssets)
-    ----+ css
-    ----+ images
-    ----+ js
+    --+ web ............(assets-target)
+    ----+ public .......(resourceManaged in Assets)
+    ------+ css
+    ------+ images
+    ------+ js
+    ----+ public-test ..(resourceManaged in TestAssets)
+    ------+ css
+    ------+ images
+    ------+ js
+    ----+ stage ........(web-staging-directory)
+
 
 The plugin introduces the notion of `assets` to sbt. Assets are public resources that are intended for client-side
 consumption e.g. by a browser. This is also distinct from sbt's existing notion of `resources` as
 project resources are generally not made public by a web server.
 
 In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
-files go into a `public` directory in the classpath.  By configuration, Play apps serve static assets from the `public`
+files go into a `public` directory in the classpath.  By configuration, sbt-web apps serve static assets from the `public`
 directory on the classpath. For example a CoffeeScript plugin would use files from `unmanagedSources in Assets`
 and produce them to `resourceManaged in Assets`.
 
-All assets wether they need processing or are static in nature, will be copied to the resourceManaged destinations.
+All assets whether they need processing or are static in nature, will be copied to the resourceManaged destinations.
 
 Assets can be organized however desired within the `assets` directory.
 
-One last thing regarding the public and public-test folders. Any WebJar depended on by the project will be automatically
-extracted into these folders e.g. target/public/lib/jquery/jquery.js. In addition the public-test folder receives
+One last thing regarding the public and public-test folders... any WebJar depended on by the project will be automatically
+extracted into these folders e.g. target/web/public/lib/jquery/jquery.js. In addition the public-test folder receives
 the contents of the public folder as well as test assets. This eases the support of test frameworks given that
 all files are locatable from one root.
+
+The "stage" directory is product of processing the asset pipeline and results in files prepared for deployment
+to a web server.
 
 Incremental Execution
 ---------------------
