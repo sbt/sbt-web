@@ -1,7 +1,7 @@
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.web.SbtWeb.WebKeys._
 import com.typesafe.sbt.web.PathMapping
 import com.typesafe.sbt.web.SbtWeb
+import WebKeys._
 
 lazy val root = project.in(file(".")).addPlugins(SbtWeb)
 

@@ -9,6 +9,51 @@ import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.OpSuccess
 import sbt.plugins.JvmModule
 
+object Import {
+
+  object WebKeys {
+
+    val Assets = config("web-assets")
+    val TestAssets = config("web-assets-test")
+    val Plugin = config("web-plugin")
+
+    val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
+    val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
+
+    val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
+    val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
+
+    val nodeModuleDirectory = SettingKey[File]("web-node-module-directory", "Default node modules directory, used for node based resources.")
+    val nodeModuleDirectories = SettingKey[Seq[File]]("web-node-module-directories", "The list of directories that node modules are to expand into.")
+    val nodeModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-node-module-generators", "List of tasks that generate node modules.")
+    val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
+
+    val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web based resources.")
+    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web modules are to expand into.")
+    val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web modules.")
+    val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web modules to")
+    val webModules = TaskKey[Seq[File]]("web-modules", "All web module files.")
+
+    val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
+    val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
+
+    val webJarsDirectory = SettingKey[File]("web-jars-directory", "The path to extract WebJars to")
+    val webJarsCache = SettingKey[File]("web-jars-cache", "The path for the webjars extraction cache file")
+    val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
+    val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
+
+    val assets = TaskKey[File]("assets", "All of the web assets.")
+
+    val pipelineStages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-pipeline-stages", "Sequence of tasks for the asset pipeline stages.")
+    val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
+    val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
+
+    val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
+    val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
+
+  }
+}
+
 /**
  * Adds settings concerning themselves with web things to SBT. Here is the directory structure supported by this plugin
  * showing relevant sbt settings:
@@ -65,48 +110,9 @@ import sbt.plugins.JvmModule
 
 object SbtWeb extends AutoPlugin {
 
-  object WebKeys {
+  val autoImport = Import
 
-    val Assets = config("web-assets")
-    val TestAssets = config("web-assets-test")
-    val Plugin = config("web-plugin")
-
-    val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
-    val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
-
-    val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
-    val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
-
-    val nodeModuleDirectory = SettingKey[File]("web-node-module-directory", "Default node modules directory, used for node based resources.")
-    val nodeModuleDirectories = SettingKey[Seq[File]]("web-node-module-directories", "The list of directories that node modules are to expand into.")
-    val nodeModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-node-module-generators", "List of tasks that generate node modules.")
-    val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
-
-    val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web based resources.")
-    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web modules are to expand into.")
-    val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web modules.")
-    val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web modules to")
-    val webModules = TaskKey[Seq[File]]("web-modules", "All web module files.")
-
-    val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
-    val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
-
-    val webJarsDirectory = SettingKey[File]("web-jars-directory", "The path to extract WebJars to")
-    val webJarsCache = SettingKey[File]("web-jars-cache", "The path for the webjars extraction cache file")
-    val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
-    val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
-
-    val assets = TaskKey[File]("assets", "All of the web assets.")
-
-    val pipelineStages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-pipeline-stages", "Sequence of tasks for the asset pipeline stages.")
-    val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
-    val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
-
-    val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
-    val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
-
-  }
-
+  import autoImport._
   import WebKeys._
 
   override def globalSettings: Seq[Setting[_]] = super.globalSettings ++ Seq(
