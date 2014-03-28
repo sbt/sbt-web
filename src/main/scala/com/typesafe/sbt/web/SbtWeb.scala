@@ -7,15 +7,14 @@ import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.OpSuccess
-import sbt.plugins.JvmModule
 
 object Import {
 
-  object WebKeys {
+  val Assets = config("web-assets")
+  val TestAssets = config("web-assets-test")
+  val Plugin = config("web-plugin")
 
-    val Assets = config("web-assets")
-    val TestAssets = config("web-assets-test")
-    val Plugin = config("web-plugin")
+  object WebKeys {
 
     val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
     val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
