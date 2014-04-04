@@ -1,3 +1,2 @@
-jdk: openjdk6
 language: scala
 script: sbt test scripted
