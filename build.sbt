@@ -4,7 +4,7 @@ organization := "com.typesafe.sbt"
 
 name := "sbt-web"
 
-version := "1.0.0-SNAPSHOT"
+version := "1.0.0-M2"
 
 scalaVersion := "2.10.3"
 
@@ -18,6 +18,9 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2" % "2.2.2" % "test",
   "junit" % "junit" % "4.11" % "test"
   )
+
+// FIXME: Working around https://github.com/sbt/sbt/issues/1156#issuecomment-39317363
+isSnapshot := true
 
 publishMavenStyle := false
 
