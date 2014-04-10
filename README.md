@@ -23,6 +23,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 
 * [sbt-coffeescript](https://github.com/sbt/sbt-coffeescript#sbt-coffeescript)
 * [sbt-digest](https://github.com/sbt/sbt-digest#sbt-digest)
+* [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
