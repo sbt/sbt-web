@@ -312,7 +312,7 @@ object SbtWeb extends AutoPlugin {
    * @return the copied file.
    */
   def copyResourceTo(to: File, url: URL, cacheDir: File): File = {
-    val toFile = to / new File(url.toURI).getName
+    val toFile = to / url.getFile
 
     incremental.runIncremental(cacheDir, Seq(url)) {
       urls =>
