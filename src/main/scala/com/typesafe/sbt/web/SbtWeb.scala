@@ -307,17 +307,12 @@ object SbtWeb extends AutoPlugin {
    * The resource won't be copied if the new file is older.
    *
    * @param to the target folder.
-   * @param name the name of the resource.
-   * @param classLoader the class loader to use.
+   * @param url the url of the resource.
    * @param cacheDir the dir to cache whether the file was read or not.
    * @return the copied file.
    */
-  def copyResourceTo(to: File, name: String, classLoader: ClassLoader, cacheDir: File): File = {
-    val url = classLoader.getResource(name)
-    if (url == null) {
-      throw new IllegalArgumentException("Couldn't find " + name)
-    }
-    val toFile = to / name
+  def copyResourceTo(to: File, url: URL, cacheDir: File): File = {
+    val toFile = to / new File(url.toURI).getName
 
     incremental.runIncremental(cacheDir, Seq(url)) {
       urls =>
