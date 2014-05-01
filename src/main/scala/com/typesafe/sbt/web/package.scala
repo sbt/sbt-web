@@ -1,6 +1,6 @@
 package com.typesafe.sbt
 
-import sbt.File
+import java.io.File
 
 package object web {
   /**
