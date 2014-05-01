@@ -14,6 +14,8 @@ object Import {
   val TestAssets = config("web-assets-test")
   val Plugin = config("web-plugin")
 
+  val pipelineStages = SettingKey[Seq[TaskKey[Pipeline.Stage]]]("web-pipeline-stages", "Sequence of tasks for the asset pipeline stages.")
+
   object WebKeys {
 
     val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
@@ -43,7 +45,6 @@ object Import {
 
     val assets = TaskKey[File]("assets", "All of the web assets.")
 
-    val pipelineStages = SettingKey[Seq[Task[Pipeline.Stage]]]("web-pipeline-stages", "Sequence of tasks for the asset pipeline stages.")
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
 
