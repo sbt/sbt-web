@@ -32,4 +32,4 @@ jsmin := { (mappings: Seq[PathMapping]) =>
   minMappings ++ other
 }
 
-pipelineStages <+= jsmin
+pipelineStages := Seq(jsmin)

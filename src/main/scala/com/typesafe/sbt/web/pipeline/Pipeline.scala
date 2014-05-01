@@ -13,7 +13,7 @@ object Pipeline {
   /**
    * Dynamically compose a sequence of transforming function tasks into a single task.
    */
-  def apply[A](stages: Seq[Task[A => A]], functions: Seq[A => A] = Seq.empty): Initialize[Task[A => A]] = {
+  def apply[A](stages: Seq[TaskKey[A => A]], functions: Seq[A => A] = Seq.empty): Initialize[Task[A => A]] = {
     if (stages.isEmpty) Def.task { Function.chain(functions) }
     else Def.taskDyn { apply(stages.tail, functions :+ stages.head.value) }
   }
@@ -21,7 +21,7 @@ object Pipeline {
   /**
    * Dynamically create a chained pipeline task from a setting that contains the stages.
    */
-  def chain[A](stagesKey: SettingKey[Seq[Task[A => A]]]): Initialize[Task[A => A]] =
+  def chain[A](stagesKey: SettingKey[Seq[TaskKey[A => A]]]): Initialize[Task[A => A]] =
     Def.taskDyn { Pipeline(stagesKey.value) }
 
 }
