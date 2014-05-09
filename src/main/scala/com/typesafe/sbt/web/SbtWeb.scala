@@ -7,6 +7,7 @@ import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.OpSuccess
+import sbt.File
 
 object Import {
 
@@ -313,31 +314,24 @@ object SbtWeb extends AutoPlugin {
    * @return the copied file.
    */
   def copyResourceTo(to: File, url: URL, cacheDir: File): File = {
-    val toFile = to / url.getFile
-
     incremental.runIncremental(cacheDir, Seq(url)) {
-      urls =>
-        (urls.map {
-          u =>
+      _ =>
+        val fromFile = if (url.getProtocol == "file") {
+          new File(url.toURI)
+        } else if (url.getProtocol == "jar") {
+          new File(url.getFile.split('!')(0))
+        } else {
+          throw new RuntimeException(s"Unknown protocol: $url")
+        }
 
-          // Find out which file will actually be read
-            val filesRead = if (u.getProtocol == "file") {
-              Set(new File(u.toURI))
-            } else if (u.getProtocol == "jar") {
-              Set(new File(u.getFile.split('!')(0)))
-            } else {
-              Set.empty[File]
-            }
+        val toFile = to / fromFile.getName
 
-            val is = u.openStream()
-            try {
-              toFile.getParentFile.mkdirs()
-              IO.transfer(is, toFile)
-              u -> OpSuccess(filesRead, Set(toFile))
-            } finally {
-              is.close()
-            }
-        }.toMap, toFile)
+        val is = url.openStream()
+        try {
+          toFile.getParentFile.mkdirs()
+          IO.transfer(is, toFile)
+          (Map(url -> OpSuccess(Set(fromFile), Set(toFile))), toFile)
+        } finally is.close()
     }
   }
 
@@ -346,18 +340,18 @@ object SbtWeb extends AutoPlugin {
   private val webActorSystemAttrKey = AttributeKey[ActorSystem]("web-actor-system")
 
   private def load(state: State): State = {
-    state.get(webActorSystemAttrKey).map(as => state).getOrElse {
+    state.get(webActorSystemAttrKey).fold({
       val webActorSystem = withActorClassloader(ActorSystem("sbt-web"))
       state.put(webActorSystemAttrKey, webActorSystem)
-    }
+    })(as => state)
   }
 
   private def unload(state: State): State = {
-    state.get(webActorSystemAttrKey).map {
+    state.get(webActorSystemAttrKey).fold(state) {
       as =>
         as.shutdown()
         state.remove(webActorSystemAttrKey)
-    }.getOrElse(state)
+    }
   }
 
   /**
