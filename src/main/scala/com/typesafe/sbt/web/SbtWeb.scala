@@ -30,11 +30,11 @@ object Import {
     val nodeModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-node-module-generators", "List of tasks that generate node modules.")
     val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
 
-    val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web based resources.")
-    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web modules are to expand into.")
-    val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web modules.")
-    val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web modules to")
-    val webModules = TaskKey[Seq[File]]("web-modules", "All web module files.")
+    val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web browser based resources.")
+    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web browser modules are to expand into.")
+    val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web browser modules.")
+    val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web browser modules to")
+    val webModules = TaskKey[Seq[File]]("web-modules", "All web browser module files.")
 
     val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
     val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
