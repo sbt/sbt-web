@@ -8,4 +8,8 @@ package object web {
    */
   type PathMapping = (File, String)
 
+  /**
+   * A function for possibly selecting a single file from a sequence.
+   */
+  type Deduplicator = Seq[File] => Option[File]
 }
