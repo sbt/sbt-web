@@ -44,6 +44,8 @@ object Import {
     val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
     val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
 
+    val deduplicators = TaskKey[Seq[Deduplicator]]("web-deduplicators", "Functions that select from duplicate asset mappings")
+
     val assets = TaskKey[File]("assets", "All of the web assets.")
 
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
@@ -244,7 +246,10 @@ object SbtWeb extends AutoPlugin {
       val files = (sources.value ++ resources.value ++ webModules.value) ---
         (sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value)
       files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
-    }
+    },
+
+    deduplicators := Nil,
+    mappings := deduplicateMappings(mappings.value, deduplicators.value)
   )
 
   val nodeModulesSettings = Seq(
@@ -282,6 +287,54 @@ object SbtWeb extends AutoPlugin {
     target.***.get
   }
 
+  // Mapping deduplication
+
+  /**
+   * Deduplicate mappings with a sequence of deduplicator functions.
+   *
+   * A mapping has duplicates if multiple files map to the same relative path.
+   * The deduplicators are applied to the duplicate files and the first
+   * successful deduplication is used (when a deduplicator selects a file),
+   * otherwise the duplicate mappings are left and an error will be reported
+   * when syncing the mappings.
+   *
+   * @param mappings the mappings to deduplicate
+   * @param deduplicators the deduplicating functions
+   * @return the (possibly) deduplicated mappings
+   */
+  def deduplicateMappings(mappings: Seq[PathMapping], deduplicators: Seq[Deduplicator]): Seq[PathMapping] = {
+    if (deduplicators.isEmpty) {
+      mappings
+    } else {
+      mappings.groupBy(_._2 /*path*/).toSeq flatMap { grouped =>
+        val (path, group) = grouped
+        if (group.size > 1) {
+          val files = group.map(_._1)
+          val deduplicated = firstResult(deduplicators)(files)
+          deduplicated.fold(group)(file => Seq((file, path)))
+        } else {
+          group
+        }
+      }
+    }
+  }
+
+  /**
+   * Return the result of the first Some returning function.
+   */
+  private def firstResult[A, B](fs: Seq[A => Option[B]])(a: A): Option[B] = {
+    (fs.toStream flatMap { f => f(a).toSeq }).headOption
+  }
+
+  /**
+   * Deduplicator that selects the first file contained in the base directory.
+   *
+   * @param base the base directory to check against
+   * @return a deduplicator function that prefers files in the base directory
+   */
+  def selectFileFrom(base: File): Deduplicator = {
+    (files: Seq[File]) => files.find(_.relativeTo(base).isDefined)
+  }
 
   // Mapping synchronization
 
