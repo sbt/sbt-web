@@ -6,7 +6,7 @@ import akka.actor.{ActorSystem, ActorRefFactory}
 import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.web.incremental.OpSuccess
+import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
 import sbt.File
 
 object Import {
@@ -368,7 +368,7 @@ object SbtWeb extends AutoPlugin {
    */
   def copyResourceTo(to: File, url: URL, cacheDir: File): File = {
     incremental.runIncremental(cacheDir, Seq(url)) {
-      _ =>
+      ops =>
         val fromFile = if (url.getProtocol == "file") {
           new File(url.toURI)
         } else if (url.getProtocol == "jar") {
@@ -379,12 +379,16 @@ object SbtWeb extends AutoPlugin {
 
         val toFile = to / fromFile.getName
 
-        val is = url.openStream()
-        try {
-          toFile.getParentFile.mkdirs()
-          IO.transfer(is, toFile)
-          (Map(url -> OpSuccess(Set(fromFile), Set(toFile))), toFile)
-        } finally is.close()
+        if (ops.nonEmpty) {
+          val is = url.openStream()
+          try {
+            toFile.getParentFile.mkdirs()
+            IO.transfer(is, toFile)
+            (Map(url -> OpSuccess(Set(fromFile), Set(toFile))), toFile)
+          } finally is.close()
+        } else {
+          (Map.empty[URL, OpResult], toFile)
+        }
     }
   }
 
