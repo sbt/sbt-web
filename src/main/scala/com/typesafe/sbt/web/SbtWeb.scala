@@ -248,6 +248,10 @@ object SbtWeb extends AutoPlugin {
       files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
     },
 
+    pipelineStages := Seq.empty,
+    allPipelineStages <<= Pipeline.chain(pipelineStages),
+    mappings := allPipelineStages.value(mappings.value),
+
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value)
   )
