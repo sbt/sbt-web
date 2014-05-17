@@ -4,7 +4,7 @@ organization := "com.typesafe.sbt"
 
 name := "sbt-web"
 
-version := "1.0.0-RC2"
+version := "1.0.0-SNAPSHOT"
 
 scalaVersion := "2.10.4"
 
