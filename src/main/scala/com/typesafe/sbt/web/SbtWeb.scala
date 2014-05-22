@@ -55,6 +55,52 @@ object Import {
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
 
   }
+
+  /**
+   * JavaScript utilities for when JS is required for configuration.
+   */
+  object WebJs {
+
+    import scala.language.implicitConversions
+
+    /**
+     * Represents a JS value in order to force the user to be explicit about the declaration of its value in order
+     * to avoid mistakes.
+     * @param v the stringified representation of the value.
+     */
+    case class JS(v: String)
+
+    object JS {
+      def apply(v: Any): JS = new JS(v.toString)
+    }
+
+    /**
+     * A string interpolator to conveniently quote strings and return a JS object.
+     * From http://stackoverflow.com/questions/21086263/how-to-insert-double-quotes-into-string-with-interpolation-in-scala
+     */
+    implicit class JSStringQuoter(val sc: StringContext) {
+      def j(args: Any*): JS = JS("\"" + sc.s(args: _*) + "\"")
+    }
+
+    /**
+     * Convert arrays to JS. To use:
+     * {{{Seq(j"propValue").toJS}}}
+     */
+    implicit class JsArrayConverter(v: Seq[JS]) {
+      def toJS: JS = JS(v.map(_.v).mkString("[", ",", "]"))
+    }
+
+    /**
+     * Convert maps to JS.
+     * {{{Map("propName" -> j"propValue").toJS}}}
+     */
+    implicit class JsObjConverter(v: Map[String, JS]) {
+      def toJS: JS = JS(v.map {
+        case (key, value) => s""""$key":${value.v}"""
+      }.mkString("{", ",", "}"))
+    }
+
+  }
 }
 
 /**
