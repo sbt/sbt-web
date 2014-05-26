@@ -244,6 +244,9 @@ object SbtWeb extends AutoPlugin {
     allPipelineStages <<= Pipeline.chain(pipelineStages),
     pipeline := allPipelineStages.value((mappings in Assets).value),
 
+    deduplicators := Nil,
+    pipeline := deduplicateMappings(pipeline.value, deduplicators.value),
+
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
       streams.value.cacheDirectory,
