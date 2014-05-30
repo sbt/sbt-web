@@ -27,6 +27,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
 * [sbt-mocha](https://github.com/sbt/sbt-mocha)
+* [sbt-purescript](https://github.com/eamelink/sbt-purescript)
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 
 File Directory Layout
