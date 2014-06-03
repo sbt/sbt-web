@@ -30,7 +30,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-purescript](https://github.com/eamelink/sbt-purescript)
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
-* 
+
 File Directory Layout
 ---------------------
 
