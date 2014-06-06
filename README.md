@@ -31,6 +31,19 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
 
+Ideas for Plugins
+-----------------
+
+* [jasmine](http://jasmine.github.io/)
+* [handlebars](http://handlebarsjs.com/)
+* [imagemin](https://github.com/gruntjs/grunt-contrib-imagemin#grunt-contrib-imagemin-v071--)
+* [uglify](https://github.com/mishoo/UglifyJS2#uglifyjs-2)
+
+Plugins in Development
+----------------------
+
+* C'mon community, get involved! Watch the talk on the anatomy of an [sbt-web plugin](https://www.youtube.com/watch?v=lIznJSBW-GU)
+
 File Directory Layout
 ---------------------
 
