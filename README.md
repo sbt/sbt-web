@@ -30,6 +30,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-purescript](https://github.com/eamelink/sbt-purescript)
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
+* [sbt-uglify](https://github.com/sbt/sbt-uglify)
 
 Ideas for Plugins
 -----------------
@@ -40,7 +41,6 @@ Ideas for Plugins
 
 Plugins in Development
 ----------------------
-* [uglify](https://github.com/mishoo/UglifyJS2#uglifyjs-2) (Christopher Hunt)
 * C'mon community, get involved! Watch the talk on the anatomy of an [sbt-web plugin](https://www.youtube.com/watch?v=lIznJSBW-GU)
 
 File Directory Layout
