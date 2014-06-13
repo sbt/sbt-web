@@ -98,6 +98,25 @@ all files are locatable from one root.
 The "stage" directory is product of processing the asset pipeline and results in files prepared for deployment
 to a web server.
 
+Execution
+---------------------
+
+An SBT plugin will be activated when if you make it an AutoPlugin and add the following lines:
+
+    override def requires = SbtWeb
+
+    override def trigger = AllRequirements
+
+You can check that your plugin has been activated by running:
+
+    sbt about
+
+It also needs to be specified which task triggers the sbt-web plugin unless you want to trigger it
+manually. The most common way to trigger an sbt-web plugin is to have it be executed when you
+compile the project by adding the following to projectSettings:
+
+    myTask in Assets <<= (myTask in Assets).triggeredBy(compile in Compile)
+
 Incremental Execution
 ---------------------
 
