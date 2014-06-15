@@ -103,17 +103,121 @@ be repeated in the future.
 Asset Pipeline
 --------------
  
-There are two categories of sbt-web based plugins:
+There are two categories of sbt-web based tasks:
 * those that operate on source files
 * those that operate on web assets
 
-Examples of source file plugins can be CoffeeScript, LESS and JSHint. Some of these take a source file and produce a
+Examples of source file tasks as plugins are CoffeeScript, LESS and JSHint. Some of these take a source file and produce a
 target web asset e.g. CoffeeScript produces JS files. Plugins in this category are mutually exclusive to each other in
 terms of their function i.e. only one CoffeeScript plugin will take CoffeeScript sources and produce target JS files.
 In summary, source file plugins produce web assets.
 
-Asset plugins operate on web assets directly. The assets they operate on depend on a "stage" in the asset pipeline.
-Examples of web asset plugins including RequireJs optimisation, gzip and md5 hashing.
+Asset tasks operate on web assets directly. The assets they operate on depend on a "stage" in the asset pipeline.
+Examples of web asset tasks as plugins include RequireJs optimisation, gzip and md5 hashing.
+
+Source file tasks can be considered to provide files for the first stage of asset pipeline processing and they will be
+executed often e.g. for each compilation of your project's source files. Asset pipeline tasks are generally executed at the time
+that you wish to prepare a distribution for deployment into, say, production.
+
+Writing a Source File task
+--------------------------
+
+The following represents the minimum amount of code required in a `build.sbt` to create a task that operates on source files i.e.
+those files that are available for processing from `src/main/assets`. Source file tasks are
+resource generators in sbt terms.
+
+```scala
+val mySourceFileTask = taskKey[Seq[File]]("Some source file task")
+
+mySourceFileTask := Nil
+
+sourceGenerators in Assets <+= mySourceFileTask
+```
+
+The addition of the `mySourceFileTask` to `sourceGenerators in Assets` declares the task as a resource generator and,
+as such, will be executed in parallel with other resource generators during the `WebKeys.assets` task execution.
+Using sbt's `show` command will yield the directory where all source file assets have been written to e.g.:
+
+```scala
+show web-assets:assets`
+```
+
+Source file tasks take input, typically from `sourceDirectory in Assets` (and/or `TestAssets`) and produce a sequence
+of files that have been generated from that input.
+
+The following code illustrates a more complete example where input files matching *.coffee are taken and copied to an 
+output folder:
+
+```scala
+mySourceFileTask := {
+  // translate .coffee files into .js files
+  val sourceDir = (sourceDirectory in Assets).value
+  val targetDir = target.value / "cs-plugin"
+  val sources = sourceDir ** "*.coffee"
+  val mappings = sources pair relativeTo(sourceDir)
+  val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
+  val copies = renamed map { case (file, path) => file -> (resourceManaged in Assets).value / path }
+  IO.copy(copies)
+  copies map (_._2)
+}
+```
+
+Using the `WebKeys.assets` task will perform source file tasks in parallel. If you find yourself using a
+source file task across many projects then consider wrapping it with an sbt plugin. Example source file plugins 
+are `sbt-jshint`, `sbt-coffeescript` and `sbt-stylus`.
+
+Writing an Asset Pipeline task
+------------------------------
+
+The following represents the minimum amount of code required to create a pipeline stage in a `build.sbt` file:
+
+```scala
+import com.typesafe.sbt.web.pipeline.Pipeline
+
+val myPipelineTask = taskKey[Pipeline.Stage]("Some pipeline task")
+
+myPipelineTask := identity
+
+pipelineStages := Seq(myPipelineTask)
+```
+
+`myPipelineTask` is a function that receives a `Seq[PathMapping]` and produces a `Seq[PathMapping]`. `PathMapping` is a tuple
+of `(File, String)` where the first member provides the full path to a file, and the second member declares the portion of that
+path which is to be considered relative. For example `(file("/a/b/c"), "b/c"). `PathMapping` types are commonly used in sbt and
+are useful in terms of providing access to a file and preserving information about its relative path; the latter being typically
+useful for copying files to a target folder where the relative portion of the path must be retained.
+
+In the above example an identity function is used i.e. what is passed in is simply returned. The task is included within a 
+sequence and assigned to `pipelineStages` i.e. the sequence represents the asset pipeline. Each stage in the asset pipeline is 
+executed after any previous stage has completed. A stage therefore receives the product of files any previous stage as input. 
+A stage's output then becomes the input to any subsequent stage. The first stage will always receive the output of having 
+executed source file tasks as its input.
+
+To perform the asset pipeline tasks use the `WebKeys.stage` task. If you use sbt's `show` command from the console then you will
+see the directory that the pipeline has been written to e.g.:
+
+```scala
+show web-stage
+```
+
+Returning what is passed in is not particularly useful. Stages tend to add and remove files from the input as expressed in
+the output returned. The following expanded task simulates minifying some js files and consequently adds files to the pipeline:
+
+```scala
+myPipelineTask := mappings: Seq[PathMapping]) =>
+  // pretend to combine all .js files into one .min.js file
+  val targetDir = target.value / "myPipelineTask" / "target"
+  val (js, other) = mappings partition (_._2.endsWith(".js"))
+  val minFile = targetDir / "js" / "all.min.js"
+  IO.touch(minFile)
+  val minMappings = Seq(minFile) pair relativeTo(targetDir)
+  minMappings ++ other
+}
+```
+
+If you find yourself commonly using a pipeline stage task across projects then you should consider wrapping it with an sbt
+plugin. Examples of such plugins are `sbt-digest`, `sbt-gzip`, `sbt-rjs` and `sbt-uglify`. The first two illustrate stages
+implemented using JVM based libraries while the latter two illustrate invoking JavaScript via js-engine.
 
 WebDriver and js-engine
 -----------------------
