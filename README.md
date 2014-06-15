@@ -153,7 +153,7 @@ as such, will be executed in parallel with other resource generators during the 
 Using sbt's `show` command will yield the directory where all source file assets have been written to e.g.:
 
 ```scala
-show web-assets:assets`
+show web-assets:assets
 ```
 
 Source file tasks take input, typically from `sourceDirectory in Assets` (and/or `TestAssets`) and produce a sequence
