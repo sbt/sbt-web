@@ -98,6 +98,19 @@ all files are locatable from one root.
 The "stage" directory is product of processing the asset pipeline and results in files prepared for deployment
 to a web server.
 
+Plugin activation
+---------------------
+
+An SBT plugin will be activated when you extend the AutoPlugin class and add the following lines:
+
+    override def requires = SbtWeb
+
+    override def trigger = AllRequirements
+
+You can check that your plugin has been activated by running:
+
+    sbt about
+
 Incremental Execution
 ---------------------
 
