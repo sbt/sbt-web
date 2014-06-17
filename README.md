@@ -180,6 +180,25 @@ Using the `WebKeys.assets` task will perform source file tasks in parallel. If y
 source file task across many projects then consider wrapping it with an sbt plugin. Example source file plugins 
 are `sbt-jshint`, `sbt-coffeescript` and `sbt-stylus`.
 
+As a final note, if you plugin depends on node modules e.g. those that are extracted from WebJars or from NPM,
+then you will need to have your task depend on the node module extraction task. The following illustrates how
+given the `Assets` scope:
+
+```scala
+mySourceFileTask := Def.task {
+  Nil
+}.dependsOn(WebKeys.nodeModules in Assets).value
+```
+
+If you're wrapping the task within a plugin then you will need the Plugin's scope as opposed to the `Assets`
+scope i.e.:
+
+```scala
+mySourceFileTask := Def.task {
+  Nil
+}.dependsOn(WebKeys.nodeModules in Plugin).value
+```
+
 Writing an Asset Pipeline task
 ------------------------------
 
