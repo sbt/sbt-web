@@ -39,7 +39,7 @@ private[incremental] object OpCache {
    * a list of files accessed, but the record could be extended to store other
    * information in the future.
    */
-  final case class Record(fileHashes: Set[FileHash])
+  final case class Record(fileHashes: Set[FileHash], products: Set[File])
 
   /**
    * A hash of a file's content.
@@ -113,7 +113,7 @@ private[incremental] object OpCache {
       if (cache.contains(oih)) cache.removeRecord(oih)
     case OpSuccess(filesRead, filesWritten) =>
       val fileHashes: Set[FileHash] = (filesRead ++ filesWritten).map(OpCache.fileHash)
-      val record = Record(fileHashes)
+      val record = Record(fileHashes, filesWritten)
       cache.putRecord(oih, record)
   }
   /**
@@ -125,4 +125,13 @@ private[incremental] object OpCache {
     }
   }
 
+  /**
+   * Get all the products for the given ops in the cache.
+   */
+  def productsForOps[Op](cache: OpCache, ops: Set[Op])(implicit opInputHasher: OpInputHasher[Op]): Set[File] = {
+    ops.flatMap { op =>
+      val record = cache.getRecord(opInputHasher.hash(op))
+      record.fold(Set.empty[File])(_.products)
+    }.toSet
+  }
 }
