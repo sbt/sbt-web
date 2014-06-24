@@ -383,7 +383,7 @@ object SbtWeb extends AutoPlugin {
    * @return the copied file.
    */
   def copyResourceTo(to: File, url: URL, cacheDir: File): File = {
-    incremental.runIncremental(cacheDir, Seq(url)) {
+    incremental.syncIncremental(cacheDir, Seq(url)) {
       ops =>
         val fromFile = if (url.getProtocol == "file") {
           new File(url.toURI)
@@ -405,7 +405,7 @@ object SbtWeb extends AutoPlugin {
         } else {
           (Map.empty[URL, OpResult], toFile)
         }
-    }
+    }._2
   }
 
   // Actor system management and API

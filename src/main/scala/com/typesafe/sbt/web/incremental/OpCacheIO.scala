@@ -6,22 +6,22 @@ package com.typesafe.sbt.web.incremental
 import java.io.File
 import sbinary._
 import sbinary.Operations._
-import sbt.{ CacheIO, Hash }
-import scala.collection.immutable.{ Map, Seq, Set }
+import sbt.CacheIO
+import scala.collection.immutable.{ Map, Set }
 
 /**
  * Support for reading and writing cache files.
  */
 private[incremental] object OpCacheIO {
 
-  import OpCacheProtocol.OpCacheFormat
+  import OpCacheProtocol.OpCacheFormatV2
 
   def toFile(cache: OpCache, file: File): Unit = {
-    CacheIO.toFile(OpCacheFormat)(cache)(file)
+    CacheIO.toFile(OpCacheFormatV2)(cache)(file)
   }
 
   def fromFile(file: File): OpCache = {
-    CacheIO.fromFile(OpCacheFormat, new OpCache())(file)
+    CacheIO.fromFile(OpCacheFormatV2, new OpCache())(file)
   }
 
 }
@@ -39,7 +39,12 @@ private[incremental] object OpCacheProtocol extends DefaultProtocol {
   implicit def fileDepsFormat: Format[Set[FileHash]] =
     immutableSetFormat[FileHash](FileHashFormat)
 
-  implicit object OpCacheFormat extends Format[OpCache] {
+  /**
+   * SBT's CacheIO stores a hash of the format type in the cache. By including a version number in the name, and
+   * incrementing that version number each time the format changes, this ensures that when the version changes,
+   * SBT won't try and load the cache, but will treat it as if there is no cache.
+   */
+  implicit object OpCacheFormatV2 extends Format[OpCache] {
     def reads(in: Input): OpCache = new OpCache(read[Map[OpInputHash, Record]](in))
     def writes(out: Output, oc: OpCache) = write[Map[OpInputHash, Record]](out, oc.content)
   }
@@ -55,8 +60,11 @@ private[incremental] object OpCacheProtocol extends DefaultProtocol {
   }
 
   implicit object RecordFormat extends Format[Record] {
-    def reads(in: Input): Record = Record(read[Set[FileHash]](in))
-    def writes(out: Output, r: Record) = write[Set[FileHash]](out, r.fileHashes)
+    def reads(in: Input): Record = Record(read[Set[FileHash]](in), read[Set[File]](in))
+    def writes(out: Output, r: Record) = {
+      write[Set[FileHash]](out, r.fileHashes)
+      write[Set[File]](out, r.products)
+    }
   }
 
   implicit object FileHashFormat extends Format[FileHash] {
