@@ -234,7 +234,7 @@ object SbtWeb extends AutoPlugin {
     managedSourceDirectories := Nil,
     managedSources := sourceGenerators(_.join).map(_.flatten).value,
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
-    unmanagedSources := (unmanagedSourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
+    unmanagedSources := unmanagedSourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
 
@@ -242,7 +242,7 @@ object SbtWeb extends AutoPlugin {
     managedResourceDirectories := Nil,
     managedResources := resourceGenerators(_.join).map(_.flatten).value,
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
-    unmanagedResources := (unmanagedResourceDirectories.value ** (includeFilter.value -- excludeFilter.value)).get,
+    unmanagedResources := unmanagedResourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
 
