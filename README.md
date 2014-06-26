@@ -21,10 +21,12 @@ Available Plugins
 
 The following is a list of plugins we know of that are built on sbt-web:
 
+* [sbt-autoprefixer](https://github.com/matthewrennie/sbt-autoprefixer)
 * [sbt-coffeescript](https://github.com/sbt/sbt-coffeescript#sbt-coffeescript)
 * [sbt-digest](https://github.com/sbt/sbt-digest#sbt-digest)
 * [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
+* [sbt-jst](https://github.com/matthewrennie/sbt-jst)
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
 * [sbt-mocha](https://github.com/sbt/sbt-mocha)
 * [sbt-purescript](https://github.com/eamelink/sbt-purescript)
