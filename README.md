@@ -101,6 +101,11 @@ all files are locatable from one root.
 The "stage" directory is product of processing the asset pipeline and results in files prepared for deployment
 to a web server.
 
+Configurations
+--------------
+
+sbt holds the notion of configurations which are similar to Maven's phases. Configurations aggregate settings and tasks. Familiar configurations will be `Compile` and `Test`. sbt-web introduces two new configurations named `Assets` and `TestAssets` correlating roughly with `Compile` and `Test`, but for web assets.
+
 Incremental Execution
 ---------------------
 
