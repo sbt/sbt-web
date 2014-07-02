@@ -245,7 +245,7 @@ Returning what is passed in is not particularly useful. Stages tend to add and r
 the output returned. The following expanded task simulates minifying some js files and consequently adds files to the pipeline:
 
 ```scala
-myPipelineTask := mappings: Seq[PathMapping]) =>
+myPipelineTask := { mappings: Seq[PathMapping] =>
   // pretend to combine all .js files into one .min.js file
   val targetDir = target.value / "myPipelineTask" / "target"
   val (js, other) = mappings partition (_._2.endsWith(".js"))
