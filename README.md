@@ -69,16 +69,17 @@ The following directory layout is declared by sbt-web with an indication of the 
     ------+ js
  
     + target
-    --+ web ............(assets-target)
-    ----+ public .......(resourceManaged in Assets)
-    ------+ css
-    ------+ images
-    ------+ js
-    ----+ public-test ..(resourceManaged in TestAssets)
-    ------+ css
-    ------+ images
-    ------+ js
-    ----+ stage ........(web-staging-directory)
+    --+ web ............(webTarget)
+    ----+ public
+    ------+ main .......(resourceManaged in Assets)
+    --------+ css
+    --------+ images
+    --------+ js
+    ------+ test .......(resourceManaged in TestAssets)
+    --------+ css
+    --------+ images
+    --------+ js
+    ----+ stage ........(stagingDirectory)
 
 
 The plugin introduces the notion of `assets` to sbt. Assets are public resources that are intended for client-side
@@ -175,7 +176,7 @@ output folder:
 mySourceFileTask := {
   // translate .coffee files into .js files
   val sourceDir = (sourceDirectory in Assets).value
-  val targetDir = target.value / "cs-plugin"
+  val targetDir = webTarget.value / "cs-plugin"
   val sources = sourceDir ** "*.coffee"
   val mappings = sources pair relativeTo(sourceDir)
   val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
@@ -248,7 +249,7 @@ the output returned. The following expanded task simulates minifying some js fil
 ```scala
 myPipelineTask := { mappings: Seq[PathMapping] =>
   // pretend to combine all .js files into one .min.js file
-  val targetDir = target.value / "myPipelineTask" / "target"
+  val targetDir = webTarget.value / "myPipelineTask" / "target"
   val (js, other) = mappings partition (_._2.endsWith(".js"))
   val minFile = targetDir / "js" / "all.min.js"
   IO.touch(minFile)
