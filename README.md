@@ -26,6 +26,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-coffeescript](https://github.com/sbt/sbt-coffeescript#sbt-coffeescript)
 * [sbt-concat](https://github.com/ground5hark/sbt-concat#sbt-concat)
 * [sbt-digest](https://github.com/sbt/sbt-digest#sbt-digest)
+* [sbt-dustjs-linkedin](https://github.com/jmparsons/sbt-dustjs-linkedin)
 * [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
 * [sbt-html-minifier](https://github.com/rgcottrell/sbt-html-minifier)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
