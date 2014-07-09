@@ -29,6 +29,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-dustjs-linkedin](https://github.com/jmparsons/sbt-dustjs-linkedin)
 * [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
 * [sbt-html-minifier](https://github.com/rgcottrell/sbt-html-minifier)
+* [sbt-imagemin](https://github.com/rgcottrell/sbt-imagemin)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
 * [sbt-jst](https://github.com/matthewrennie/sbt-jst)
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
@@ -44,7 +45,6 @@ Ideas for Plugins
 
 * [jasmine](http://jasmine.github.io/)
 * [handlebars](http://handlebarsjs.com/)
-* [imagemin](https://github.com/gruntjs/grunt-contrib-imagemin#grunt-contrib-imagemin-v071--)
 
 Plugins in Development
 ----------------------
