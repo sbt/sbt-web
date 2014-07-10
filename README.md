@@ -25,6 +25,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-closure](https://github.com/ground5hark/sbt-closure#sbt-closure)
 * [sbt-coffeescript](https://github.com/sbt/sbt-coffeescript#sbt-coffeescript)
 * [sbt-concat](https://github.com/ground5hark/sbt-concat#sbt-concat)
+* [sbt-css-compress](https://github.com/ground5hark/sbt-css-compress#sbt-css-compress)
 * [sbt-digest](https://github.com/sbt/sbt-digest#sbt-digest)
 * [sbt-dustjs-linkedin](https://github.com/jmparsons/sbt-dustjs-linkedin)
 * [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
