@@ -240,8 +240,13 @@ executed after any previous stage has completed. A stage therefore receives the 
 A stage's output then becomes the input to any subsequent stage. The first stage will always receive the output of having 
 executed source file tasks as its input.
 
-To perform the asset pipeline tasks use the `WebKeys.stage` task. If you use sbt's `show` command from the console then you will
-see the directory that the pipeline has been written to e.g.:
+If you have some need for the assets produced by the `pipelineStages` in your development environment (during `play run`), then you can scope the `pipelineStages` to the `Assets` config.
+
+```scala
+pipelineStages in Assets := Seq(myPipelineTask)
+```
+
+To perform the asset pipeline tasks use the `WebKeys.stage` task. If you use sbt's `show` command from the console then you will see the directory that the pipeline has been written to e.g.:
 
 ```scala
 show web-stage
