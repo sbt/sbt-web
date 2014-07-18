@@ -5,6 +5,7 @@ import sbt.Keys._
 import akka.actor.{ActorSystem, ActorRefFactory}
 import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
+import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
 import sbt.File
@@ -51,7 +52,8 @@ object Import {
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
 
-    val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix for package mappings.")
+    val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix for package mappings, when not a webjar.")
+    val packageAsWebJar = SettingKey[Boolean]("web-package-as-web-jar", "Package as webjar for publishing.")
 
     val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
@@ -283,15 +285,29 @@ object SbtWeb extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
-  val packageSettings: Seq[Setting[_]] =
-    inConfig(Assets)(Defaults.packageTaskSettings(packageBin, packageMappings)) ++ Seq(
-      packagePrefix in Assets := "",
-      Keys.`package` in Assets := (packageBin in Assets).value
+  val packageSettings: Seq[Setting[_]] = inConfig(Assets)(
+    Defaults.packageTaskSettings(packageBin, packageMappings) ++ Seq(
+      packagePrefix := "",
+      packageAsWebJar := (publishArtifact in packageBin).value,
+      Keys.`package` := packageBin.value
     )
+  )
 
+  /**
+   * Create package mappings.
+   * If packaging as a webjar (the default when publishing) then package under
+   * the webjars path prefix and also exclude all assets under 'lib'.
+   * Webjar dependencies will be included as transitive dependencies.
+   * Otherwise package everything directly, adding the package prefix if specified.
+   */
   def packageMappings = Def.task {
-    (pipeline in Defaults.ConfigGlobal).value map {
-      case (file, path) => file -> (packagePrefix.value + path)
+    val webjar = packageAsWebJar.value
+    val webjarPrefix = s"${WEBJARS_PATH_PREFIX}/${normalizedName.value}/${version.value}"
+    val prefix = if (webjar) webjarPrefix else packagePrefix.value
+    val exclude = if (webjar) Some(webModulesLib.value) else None
+    (pipeline in Defaults.ConfigGlobal).value flatMap {
+      case (file, path) if exclude.fold(false)(path.startsWith) => None
+      case (file, path) => Some(file -> s"$prefix/$path")
     }
   }
 
