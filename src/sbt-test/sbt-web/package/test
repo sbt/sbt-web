@@ -2,5 +2,13 @@
 $ exists target/web-project-0.1-web-assets.jar
 
 > extractAssets
+$ exists extracted/js/a.js
+$ exists extracted/lib/jquery/jquery.js
+
+> 'set WebKeys.packagePrefix in Assets := "public/"'
+> web-assets:package
+
+$ delete extracted
+> extractAssets
 $ exists extracted/public/js/a.js
 $ exists extracted/public/lib/jquery/jquery.js

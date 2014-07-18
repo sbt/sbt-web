@@ -302,12 +302,12 @@ object SbtWeb extends AutoPlugin {
    */
   def packageMappings = Def.task {
     val webjar = packageAsWebJar.value
-    val webjarPrefix = s"${WEBJARS_PATH_PREFIX}/${normalizedName.value}/${version.value}"
+    val webjarPrefix = s"${WEBJARS_PATH_PREFIX}/${normalizedName.value}/${version.value}/"
     val prefix = if (webjar) webjarPrefix else packagePrefix.value
     val exclude = if (webjar) Some(webModulesLib.value) else None
     (pipeline in Defaults.ConfigGlobal).value flatMap {
       case (file, path) if exclude.fold(false)(path.startsWith) => None
-      case (file, path) => Some(file -> s"$prefix/$path")
+      case (file, path) => Some(file -> (prefix + path))
     }
   }
 
