@@ -126,6 +126,8 @@ object SbtWeb extends AutoPlugin {
 
   val autoImport = Import
 
+  override def requires = sbt.plugins.JvmPlugin
+
   import autoImport._
   import WebKeys._
 
@@ -227,7 +229,7 @@ object SbtWeb extends AutoPlugin {
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
     inConfig(Plugin)(nodeModulesSettings) ++
-    packageSettings
+    packageSettings ++ publishSettings
 
 
   val unscopedAssetSettings: Seq[Setting[_]] = Seq(
@@ -292,6 +294,17 @@ object SbtWeb extends AutoPlugin {
       case (file, path) => file -> (packagePrefix.value + path)
     }
   }
+
+  val assetArtifactTasks = Seq(packageBin in Assets)
+
+  val publishSettings: Seq[Setting[_]] = Seq(
+    ivyConfigurations += Assets,
+    publishArtifact in Assets := false,
+    artifacts in Assets <<= Classpaths.artifactDefs(assetArtifactTasks),
+    packagedArtifacts in Assets <<= Classpaths.packaged(assetArtifactTasks),
+    artifacts ++= (artifacts in Assets).value,
+    packagedArtifacts ++= (packagedArtifacts in Assets).value
+  )
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {
