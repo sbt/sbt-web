@@ -1,0 +1,9 @@
+> module/publishLocal
+
+> other/assets
+
+$ exists other/target/web/web-modules/main/webjars/lib/jquery/jquery.js
+$ exists other/target/web/web-modules/main/webjars/lib/web-module/js/a.js
+
+$ exists other/target/web/public/main/lib/jquery/jquery.js
+$ exists other/target/web/public/main/lib/web-module/js/a.js
