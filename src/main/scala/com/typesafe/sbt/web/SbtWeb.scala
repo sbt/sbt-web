@@ -51,6 +51,8 @@ object Import {
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
 
+    val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix for package mappings.")
+
     val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
 
@@ -224,7 +226,8 @@ object SbtWeb extends AutoPlugin {
   ) ++
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
-    inConfig(Plugin)(nodeModulesSettings)
+    inConfig(Plugin)(nodeModulesSettings) ++
+    packageSettings
 
 
   val unscopedAssetSettings: Seq[Setting[_]] = Seq(
@@ -278,6 +281,17 @@ object SbtWeb extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
+  val packageSettings: Seq[Setting[_]] =
+    inConfig(Assets)(Defaults.packageTaskSettings(packageBin, packageMappings)) ++ Seq(
+      packagePrefix in Assets := "",
+      Keys.`package` in Assets := (packageBin in Assets).value
+    )
+
+  def packageMappings = Def.task {
+    (pipeline in Defaults.ConfigGlobal).value map {
+      case (file, path) => file -> (packagePrefix.value + path)
+    }
+  }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {
