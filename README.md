@@ -37,6 +37,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
 * [sbt-mocha](https://github.com/sbt/sbt-mocha)
 * [sbt-purescript](https://github.com/eamelink/sbt-purescript)
+* [sbt-reactjs](https://github.com/ddispaltro/sbt-reactjs)
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 * [sbt-simple-url-update](https://github.com/neomaclin/sbt-simple-url-update#sbt-simple-url-update)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
