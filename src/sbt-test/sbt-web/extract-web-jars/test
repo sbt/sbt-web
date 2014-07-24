@@ -26,10 +26,10 @@ $ newer target/foo target/web/public/main/lib/jquery/jquery.js
 # Test assets
 > web-assets-test:assets
 
-# First check that test webjars and only test webjars were extracted
+# All webjars on test classpath are extracted for tests
 $ exists target/web/web-modules/test/webjars/lib/requirejs/require.js
--$ exists target/web/web-modules/test/webjars/lib/jquery/jquery.js
--$ exists target/web/web-modules/test/webjars/lib/prototype/prototype.js
+$ exists target/web/web-modules/test/webjars/lib/jquery/jquery.js
+$ exists target/web/web-modules/test/webjars/lib/prototype/prototype.js
 
 # Now check everything was aggregated in test assets
 $ exists target/web/public/test/lib/jquery/jquery.js

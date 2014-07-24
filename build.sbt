@@ -12,7 +12,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.2",
-  "org.webjars" % "webjars-locator" % "0.14",
+  "org.webjars" % "webjars-locator" % "0.17",
   "org.specs2" %% "specs2" % "2.3.11" % "test",
   "junit" % "junit" % "4.11" % "test"
   )
