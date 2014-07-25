@@ -2,12 +2,12 @@ package com.typesafe.sbt.web
 
 import sbt._
 import sbt.Keys._
+import sbt.Defaults.relativeMappings
 import akka.actor.{ActorSystem, ActorRefFactory}
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
-import sbt.File
 
 object Import {
 
@@ -35,6 +35,8 @@ object Import {
     val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web browser modules.")
     val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web browser modules to")
     val webModules = TaskKey[Seq[File]]("web-modules", "All web browser module files.")
+
+    val directWebModules = TaskKey[Seq[String]]("web-direct-web-modules", "Web modules that should be used without 'lib/module' prefix.")
 
     val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
     val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
@@ -171,6 +173,9 @@ object SbtWeb extends AutoPlugin {
     webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
+    directWebModules in Assets := Nil,
+    directWebModules in TestAssets := Seq((moduleName in Assets).value),
+
     webJarsCache in webJars in Assets := webTarget.value / "web-modules" / "webjars-main.cache",
     webJarsCache in webJars in TestAssets := webTarget.value / "web-modules" / "webjars-test.cache",
     webJarsCache in nodeModules in Assets := webTarget.value / "node-modules" / "webjars-main.cache",
@@ -232,6 +237,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSources := unmanagedSourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
+    mappings in sources <<= relativeMappings(sources, sourceDirectories),
 
     resourceGenerators := Nil,
     managedResourceDirectories := Nil,
@@ -240,21 +246,20 @@ object SbtWeb extends AutoPlugin {
     unmanagedResources := unmanagedResourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
+    mappings in resources <<= relativeMappings(resources, resourceDirectories),
 
     webModuleGenerators := Nil,
     webModuleDirectories := Nil,
     webModules := webModuleGenerators(_.join).map(_.flatten).value,
+    mappings in webModules <<= relativeMappings(webModules, webModuleDirectories),
+    mappings in webModules <<= flattenDirectWebModules,
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
     webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
     webModuleGenerators <+= webJars,
     webModuleDirectories += webJarsDirectory.value,
 
-    mappings := {
-      val files = (sources.value ++ resources.value ++ webModules.value) ---
-        (sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value)
-      files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
-    },
+    mappings := (mappings in sources).value ++ (mappings in resources).value ++ (mappings in webModules).value,
 
     pipelineStages := Seq.empty,
     allPipelineStages <<= Pipeline.chain(pipelineStages),
@@ -308,6 +313,25 @@ object SbtWeb extends AutoPlugin {
     (pipeline in Defaults.ConfigGlobal).value map {
       case (file, path) => file -> (prefix + path)
     }
+  }
+
+  def flattenDirectWebModules = Def.task {
+    val directModules = directWebModules.value
+    val moduleMappings = (mappings in webModules).value
+    if (directModules.nonEmpty) {
+      val prefixes = directModules map {
+        module => s"${webModulesLib.value}/${module}/"
+      }
+      moduleMappings map {
+        case (file, path) => file -> stripPrefixes(path, prefixes)
+      }
+    } else {
+      moduleMappings
+    }
+  }
+
+  private def stripPrefixes(s: String, prefixes: Seq[String]): String = {
+    prefixes.find(s.startsWith).fold(s)(s.stripPrefix)
   }
 
   private def classLoader(classpath: Classpath): ClassLoader =

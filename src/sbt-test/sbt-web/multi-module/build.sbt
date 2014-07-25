@@ -5,6 +5,9 @@ lazy val a = (project in file("."))
 lazy val b = (project in file("modules/b"))
   .enablePlugins(SbtWeb)
   .dependsOn(c % "compile;test->test", d % "compile;test->test")
+  .settings(
+    WebKeys.directWebModules in TestAssets := Nil  
+  )
 
 lazy val c = (project in file("modules/c"))
   .enablePlugins(SbtWeb)
