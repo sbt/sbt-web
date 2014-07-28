@@ -36,6 +36,8 @@ object Import {
     val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web browser modules to")
     val webModules = TaskKey[Seq[File]]("web-modules", "All web browser module files.")
 
+    val internalWebModules = TaskKey[Seq[String]]("web-internal-web-modules", "Web modules that are on the internal dependency classpath.")
+    val importDirectly = SettingKey[Boolean]("web-import-directly", "Determine whether internal web modules should be imported directly by default.")
     val directWebModules = TaskKey[Seq[String]]("web-direct-web-modules", "Web modules that should be used without 'lib/module' prefix.")
 
     val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
@@ -173,6 +175,9 @@ object SbtWeb extends AutoPlugin {
     webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
+    internalWebModules in Assets <<= getInternalWebModules(Compile),
+    internalWebModules in TestAssets <<= getInternalWebModules(Test),
+    importDirectly := false,
     directWebModules in Assets := Nil,
     directWebModules in TestAssets := Seq((moduleName in Assets).value),
 
@@ -256,6 +261,8 @@ object SbtWeb extends AutoPlugin {
     mappings in webModules <<= relativeMappings(webModules, webModuleDirectories),
     mappings in webModules <<= flattenDirectWebModules,
 
+    directWebModules ++= { if (importDirectly.value) internalWebModules.value else Seq.empty },
+
     webJarsDirectory := webModuleDirectory.value / "webjars",
     webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
     webModuleGenerators <+= webJars,
@@ -319,6 +326,13 @@ object SbtWeb extends AutoPlugin {
     (pipeline in Defaults.ConfigGlobal).value map {
       case (file, path) => file -> (prefix + path)
     }
+  }
+
+  /**
+   * Get module names for all internal web module dependencies on the classpath.
+   */
+  def getInternalWebModules(conf: Configuration) = Def.task {
+    (internalDependencyClasspath in conf).value.flatMap(_.get(WebKeys.webModulesLib.key))
   }
 
   def flattenDirectWebModules = Def.task {
