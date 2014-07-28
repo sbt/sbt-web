@@ -187,8 +187,10 @@ object SbtWeb extends AutoPlugin {
 
     assets := (assets in Assets).value,
 
-    products in Compile ++= (products in Assets).value,
-    products in Test ++= (products in TestAssets).value,
+    mappings in (Compile, packageBin) ++= (exportedMappings in Assets).value,
+    mappings in (Test, packageBin) ++= (exportedMappings in TestAssets).value,
+    exportedProducts in Compile ++= exportAssets(Assets, Compile).value,
+    exportedProducts in Test ++= exportAssets(TestAssets, Test).value,
 
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
@@ -272,7 +274,7 @@ object SbtWeb extends AutoPlugin {
 
     exportedMappings <<= createWebJarMappings,
     exportedAssets := syncMappings(streams.value.cacheDirectory, exportedMappings.value, classDirectory.value),
-    products := Seq(exportedAssets.value)
+    exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value))
   )
 
   val nodeModulesSettings = Seq(
@@ -296,6 +298,10 @@ object SbtWeb extends AutoPlugin {
       case (file, path) if webModule(file) => None
       case (file, path) => Some(file -> (prefix + path))
     }
+  }
+
+  def exportAssets(assetConf: Configuration, exportConf: Configuration) = Def.task {
+    if ((exportJars in exportConf).value) Seq.empty else (exportedProducts in assetConf).value
   }
 
   def packageSettings: Seq[Setting[_]] = inConfig(Assets)(
