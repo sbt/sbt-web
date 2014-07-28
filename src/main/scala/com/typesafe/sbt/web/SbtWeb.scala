@@ -335,6 +335,14 @@ object SbtWeb extends AutoPlugin {
     (internalDependencyClasspath in conf).value.flatMap(_.get(WebKeys.webModulesLib.key))
   }
 
+  /**
+   * Remove web module dependencies from a classpath.
+   * This is a helper method for Play 2.3 transitions.
+   */
+  def classpathWithoutAssets(classpath: Classpath): Classpath = {
+    classpath.filter(_.get(WebKeys.webModulesLib.key).isEmpty)
+  }
+
   def flattenDirectWebModules = Def.task {
     val directModules = directWebModules.value
     val moduleMappings = (mappings in webModules).value
