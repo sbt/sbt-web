@@ -2,13 +2,12 @@ package com.typesafe.sbt.web
 
 import sbt._
 import sbt.Keys._
+import sbt.Defaults.relativeMappings
 import akka.actor.{ActorSystem, ActorRefFactory}
-import scala.tools.nsc.util.ScalaClassLoader.URLClassLoader
 import org.webjars.{WebJarExtractor, FileSystemCache}
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
-import sbt.File
 
 object Import {
 
@@ -32,10 +31,14 @@ object Import {
     val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
 
     val webModuleDirectory = SettingKey[File]("web-module-directory", "Default web modules directory, used for web browser based resources.")
-    val webModuleDirectories = TaskKey[Seq[File]]("web-module-directories", "The list of directories that web browser modules are to expand into.")
+    val webModuleDirectories = SettingKey[Seq[File]]("web-module-directories", "The list of directories that web browser modules are to expand into.")
     val webModuleGenerators = SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web browser modules.")
     val webModulesLib = SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web browser modules to")
     val webModules = TaskKey[Seq[File]]("web-modules", "All web browser module files.")
+
+    val internalWebModules = TaskKey[Seq[String]]("web-internal-web-modules", "Web modules that are on the internal dependency classpath.")
+    val importDirectly = SettingKey[Boolean]("web-import-directly", "Determine whether internal web modules should be imported directly by default.")
+    val directWebModules = TaskKey[Seq[String]]("web-direct-web-modules", "Web modules that should be used without 'lib/module' prefix.")
 
     val webJarsNodeModulesDirectory = SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
     val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
@@ -49,16 +52,13 @@ object Import {
 
     val assets = TaskKey[File]("assets", "All of the web assets.")
 
-    val exportAssets = SettingKey[Boolean]("web-export-assets", "Determines whether assets should be exported to other projects.")
-    val exportedAssetpath = TaskKey[Seq[File]]("web-exported-assetpath", "Asset directeries that are exported to other projects.")
-    val dependencyAssetpath = TaskKey[Seq[File]]("web-dependency-assetpath", "Asset directories that are imported from project dependencies.")
-    val dependencyModules = TaskKey[Seq[File]]("web-dependency-modules", "All module files from project dependencies.")
+    val exportedMappings = TaskKey[Seq[PathMapping]]("web-exported-mappings", "Asset mappings in WebJar format for exporting and packaging.")
+    val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
 
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
 
-    val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix for package mappings, when not a webjar.")
-    val packageAsWebJar = SettingKey[Boolean]("web-package-as-web-jar", "Package as webjar for publishing.")
+    val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix when packaging all assets.")
 
     val stage = TaskKey[File]("web-stage", "Create a local directory with all the files laid out as they would be in the final distribution.")
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
@@ -164,6 +164,9 @@ object SbtWeb extends AutoPlugin {
     public in Assets := webTarget.value / "public" / "main",
     public in TestAssets := webTarget.value / "public" / "test",
 
+    classDirectory in Assets := webTarget.value / "classes" / "main",
+    classDirectory in TestAssets := webTarget.value / "classes" / "test",
+
     nodeModuleDirectory in Assets := webTarget.value / "node-modules" / "main",
     nodeModuleDirectory in TestAssets := webTarget.value / "node-modules" / "test",
     nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
@@ -172,28 +175,27 @@ object SbtWeb extends AutoPlugin {
     webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
+    internalWebModules in Assets <<= getInternalWebModules(Compile),
+    internalWebModules in TestAssets <<= getInternalWebModules(Test),
+    importDirectly := false,
+    directWebModules in Assets := Nil,
+    directWebModules in TestAssets := Seq((moduleName in Assets).value),
+
     webJarsCache in webJars in Assets := webTarget.value / "web-modules" / "webjars-main.cache",
     webJarsCache in webJars in TestAssets := webTarget.value / "web-modules" / "webjars-test.cache",
     webJarsCache in nodeModules in Assets := webTarget.value / "node-modules" / "webjars-main.cache",
     webJarsCache in nodeModules in TestAssets := webTarget.value / "node-modules" / "webjars-test.cache",
     webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
-    webJarsClassLoader in Assets := new URLClassLoader((dependencyClasspath in Compile).value.map(_.data.toURI.toURL), null),
-    webJarsClassLoader in TestAssets := {
-      // Exclude webjars from compile, because they are already extracted to assets
-      val isCompileDep: Set[File] = (dependencyClasspath in Compile).value.map(_.data).toSet
-      val testClasspath: Classpath = (dependencyClasspath in Test).value
-      val urls = testClasspath.collect {
-        case dep if !isCompileDep(dep.data) => dep.data.toURI.toURL
-      }
-
-      new URLClassLoader(urls, null)
-    },
+    webJarsClassLoader in Assets := classLoader((dependencyClasspath in Compile).value),
+    webJarsClassLoader in TestAssets := classLoader((dependencyClasspath in Test).value),
     webJarsClassLoader in Plugin := SbtWeb.getClass.getClassLoader,
 
     assets := (assets in Assets).value,
 
-    exportAssets in Assets := true,
-    exportAssets in TestAssets := false,
+    mappings in (Compile, packageBin) ++= (exportedMappings in Assets).value,
+    mappings in (Test, packageBin) ++= (exportedMappings in TestAssets).value,
+    exportedProducts in Compile ++= exportAssets(Assets, Compile).value,
+    exportedProducts in Test ++= exportAssets(TestAssets, Test).value,
 
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
@@ -229,7 +231,7 @@ object SbtWeb extends AutoPlugin {
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
     inConfig(Plugin)(nodeModulesSettings) ++
-    packageSettings ++ publishSettings
+    packageSettings
 
 
   val unscopedAssetSettings: Seq[Setting[_]] = Seq(
@@ -242,6 +244,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSources := unmanagedSourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
+    mappings in sources <<= relativeMappings(sources, sourceDirectories),
 
     resourceGenerators := Nil,
     managedResourceDirectories := Nil,
@@ -250,36 +253,35 @@ object SbtWeb extends AutoPlugin {
     unmanagedResources := unmanagedResourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
+    mappings in resources <<= relativeMappings(resources, resourceDirectories),
 
     webModuleGenerators := Nil,
     webModuleDirectories := Nil,
     webModules := webModuleGenerators(_.join).map(_.flatten).value,
+    mappings in webModules <<= relativeMappings(webModules, webModuleDirectories),
+    mappings in webModules <<= flattenDirectWebModules,
 
-    exportedAssetpath := { if (exportAssets.value) Seq(assets.value) else Nil },
-    dependencyAssetpath <<= (thisProjectRef, configuration, settingsData, buildDependencies) flatMap interDependencies,
-    dependencyModules := dependencyAssetpath.value.***.get,
-    webModuleGenerators <+= dependencyModules,
-    webModuleDirectories ++= dependencyAssetpath.value,
+    directWebModules ++= { if (importDirectly.value) internalWebModules.value else Seq.empty },
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
     webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
     webModuleGenerators <+= webJars,
     webModuleDirectories += webJarsDirectory.value,
 
-    mappings := {
-      val files = (sources.value ++ resources.value ++ webModules.value) ---
-        (sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value)
-      files pair relativeTo(sourceDirectories.value ++ resourceDirectories.value ++ webModuleDirectories.value) | flat
-    },
+    mappings := (mappings in sources).value ++ (mappings in resources).value ++ (mappings in webModules).value,
 
     pipelineStages := Seq.empty,
     allPipelineStages <<= Pipeline.chain(pipelineStages),
     mappings := allPipelineStages.value(mappings.value),
 
-    deduplicators := Seq(selectFirstDirectory, selectFirstIdenticalFile),
+    deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value),
 
-    assets := syncMappings(streams.value.cacheDirectory, mappings.value, public.value)
+    assets := syncMappings(streams.value.cacheDirectory, mappings.value, public.value),
+
+    exportedMappings <<= createWebJarMappings,
+    exportedAssets := syncMappings(streams.value.cacheDirectory, exportedMappings.value, classDirectory.value),
+    exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value))
   )
 
   val nodeModulesSettings = Seq(
@@ -292,67 +294,76 @@ object SbtWeb extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
-  val packageSettings: Seq[Setting[_]] = inConfig(Assets)(
-    Defaults.packageTaskSettings(packageBin, packageMappings) ++ Seq(
+  /**
+   * Create package mappings for assets in the webjar format.
+   * Use the webjars path prefix and exclude all web module assets.
+   */
+  def createWebJarMappings = Def.task {
+    val prefix = s"${WEBJARS_PATH_PREFIX}/${moduleName.value}/${version.value}/"
+    def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
+    mappings.value flatMap {
+      case (file, path) if webModule(file) => None
+      case (file, path) => Some(file -> (prefix + path))
+    }
+  }
+
+  def exportAssets(assetConf: Configuration, exportConf: Configuration) = Def.task {
+    if ((exportJars in exportConf).value) Seq.empty else (exportedProducts in assetConf).value
+  }
+
+  def packageSettings: Seq[Setting[_]] = inConfig(Assets)(
+    Defaults.packageTaskSettings(packageBin, packageAssetsMappings) ++ Seq(
       packagePrefix := "",
-      packageAsWebJar := (publishArtifact in packageBin).value,
       Keys.`package` := packageBin.value
     )
   )
 
   /**
-   * Create package mappings.
-   * If packaging as a webjar (the default when publishing) then package under
-   * the webjars path prefix and also exclude all assets under 'lib'.
-   * Webjar dependencies will be included as transitive dependencies.
-   * Otherwise package everything directly, adding the package prefix if specified.
+   * Create package mappings for all assets, adding the optional prefix.
    */
-  def packageMappings = Def.task {
-    val webjar = packageAsWebJar.value
-    val webjarPrefix = s"${WEBJARS_PATH_PREFIX}/${normalizedName.value}/${version.value}/"
-    val prefix = if (webjar) webjarPrefix else packagePrefix.value
-    val exclude = if (webjar) Some(webModulesLib.value) else None
-    (pipeline in Defaults.ConfigGlobal).value flatMap {
-      case (file, path) if exclude.fold(false)(path.startsWith) => None
-      case (file, path) => Some(file -> (prefix + path))
+  def packageAssetsMappings = Def.task {
+    val prefix = packagePrefix.value
+    (pipeline in Defaults.ConfigGlobal).value map {
+      case (file, path) => file -> (prefix + path)
     }
   }
 
-  val assetArtifactTasks = Seq(packageBin in Assets)
-
-  val publishSettings: Seq[Setting[_]] = Seq(
-    ivyConfigurations += Assets,
-    publishArtifact in Assets := false,
-    artifacts in Assets <<= Classpaths.artifactDefs(assetArtifactTasks),
-    packagedArtifacts in Assets <<= Classpaths.packaged(assetArtifactTasks),
-    artifacts ++= (artifacts in Assets).value,
-    packagedArtifacts ++= (packagedArtifacts in Assets).value
-  )
-
-  /*
-   * Create a task that gets the combined exportedMappings from all project and configuration dependencies.
+  /**
+   * Get module names for all internal web module dependencies on the classpath.
    */
-  private def interDependencies(projectRef: ProjectRef, conf: Configuration, data: Settings[Scope], deps: BuildDependencies): Task[Seq[File]] = {
-    // map each (project, configuration) pair from getDependencies to its exportedMappings task
-    val tasks = for ((p, c) <- getDependencies(projectRef, conf, deps)) yield {
-      // use settings data to access the task, in case it doesn't exist (as in non-SbtWeb projects)
-      (exportedAssetpath in (p, c)) get data getOrElse constant(Seq.empty[File])
+  def getInternalWebModules(conf: Configuration) = Def.task {
+    (internalDependencyClasspath in conf).value.flatMap(_.get(WebKeys.webModulesLib.key))
+  }
+
+  /**
+   * Remove web module dependencies from a classpath.
+   * This is a helper method for Play 2.3 transitions.
+   */
+  def classpathWithoutAssets(classpath: Classpath): Classpath = {
+    classpath.filter(_.get(WebKeys.webModulesLib.key).isEmpty)
+  }
+
+  def flattenDirectWebModules = Def.task {
+    val directModules = directWebModules.value
+    val moduleMappings = (mappings in webModules).value
+    if (directModules.nonEmpty) {
+      val prefixes = directModules map {
+        module => s"${webModulesLib.value}/${module}/"
+      }
+      moduleMappings map {
+        case (file, path) => file -> stripPrefixes(path, prefixes)
+      }
+    } else {
+      moduleMappings
     }
-    tasks.join.map(_.flatten.distinct)
   }
 
-  /*
-   * Get all the configuration and project dependencies for a project and configuration.
-   * For example, if there are two modules A and B, A depends on B, and B is exporting its test assets, then
-   * calling getDependencies with (A, TestAssets) will return (A, Assets) and (B, TestAssets) as dependencies.
-   */
-  private def getDependencies(projectRef: ProjectRef, conf: Configuration, deps: BuildDependencies): Seq[(ProjectRef, Configuration)] = {
-    // depend on extended configurations in the same project (TestAssets -> Assets)
-    val configDeps = conf.extendsConfigs map { c => (projectRef, c) }
-    // depend on the same configuration in all project dependencies (extracted from BuildDependencies)
-    val moduleDeps = deps.classpath(projectRef) map { resolved => (resolved.project, conf) }
-    configDeps ++ moduleDeps
+  private def stripPrefixes(s: String, prefixes: Seq[String]): String = {
+    prefixes.find(s.startsWith).fold(s)(s.stripPrefix)
   }
+
+  private def classLoader(classpath: Classpath): ClassLoader =
+    new java.net.URLClassLoader(Path.toURLs(classpath.files), null)
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {
