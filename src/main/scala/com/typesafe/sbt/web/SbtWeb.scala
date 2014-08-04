@@ -1,5 +1,6 @@
 package com.typesafe.sbt.web
 
+import com.typesafe.config.{ConfigException, ConfigFactory}
 import sbt._
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
@@ -524,8 +525,20 @@ object SbtWeb extends AutoPlugin {
 
   private def load(state: State): State = {
     state.get(webActorSystemAttrKey).fold({
-      val webActorSystem = withActorClassloader(ActorSystem("sbt-web"))
-      state.put(webActorSystemAttrKey, webActorSystem)
+      withActorClassloader {
+        val loadedConfig = try {
+          ConfigFactory.load().getConfig("sbt-web")
+        } catch {
+          case _: ConfigException =>
+            ConfigFactory.empty()
+        }
+        val config = loadedConfig.withFallback(ConfigFactory.parseString( """akka {
+                                                                            |  log-dead-letters = 0
+                                                                            |  log-dead-letters-during-shutdown = off
+                                                                            |}""".stripMargin))
+        val webActorSystem = ActorSystem("sbt-web", config)
+        state.put(webActorSystemAttrKey, webActorSystem)
+      }
     })(as => state)
   }
 
