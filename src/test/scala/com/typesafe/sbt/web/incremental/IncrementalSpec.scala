@@ -15,29 +15,29 @@ class IncrementalSpec extends Specification {
 
     "always perform an op when there's no cache file" in {
       IO.withTemporaryDirectory { tmpDir =>
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map[String,OpResult]("op1" -> OpFailure),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
     "rerun an op when it failed last time" in {
       IO.withTemporaryDirectory { tmpDir =>
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpFailure),
             prunedOps must_== List("op1")
           )
-        }
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        }._2
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpFailure),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -46,18 +46,18 @@ class IncrementalSpec extends Specification {
         val file1 = new File(tmpDir, "1")
         IO.write(file1, "x")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set())),
             prunedOps must_== List("op1")
           )
-        }
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        }._2
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List()
           )
-        }
+        }._2
       }
     }
 
@@ -68,21 +68,21 @@ class IncrementalSpec extends Specification {
         val file2 = new File(tmpDir, "2")
         IO.write(file1, "x")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         IO.write(file1, "y")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -90,22 +90,22 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         val file1 = new File(tmpDir, "1")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           IO.write(file1, "x")
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         IO.write(file1, "y")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -113,22 +113,22 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         val file1 = new File(tmpDir, "1")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           IO.write(file1, "x")
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         IO.delete(file1)
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -139,21 +139,21 @@ class IncrementalSpec extends Specification {
         IO.write(file1, "x")
         IO.write(file2, "x")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1, file2), filesWritten = Set())),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         IO.write(file2, "y")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -162,23 +162,23 @@ class IncrementalSpec extends Specification {
         val file1 = new File(tmpDir, "1")
         val file2 = new File(tmpDir, "2")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           IO.write(file1, "x")
           IO.write(file2, "x")
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1, file2))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         IO.write(file2, "y")
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
@@ -193,7 +193,7 @@ class IncrementalSpec extends Specification {
         IO.write(file3, "x")
         IO.write(file4, "x")
 
-        runIncremental(tmpDir, List("op1", "op2", "op3", "op4")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1", "op2", "op3", "op4")) { prunedOps =>
           (
             Map(
               "op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set()),
@@ -203,12 +203,12 @@ class IncrementalSpec extends Specification {
             ),
             prunedOps must_== List("op1", "op2", "op3", "op4")
           )
-        }
+        }._2
 
         IO.write(file1, "y")
         IO.write(file4, "y")
 
-        runIncremental(tmpDir, List("op1", "op2", "op3", "op4")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1", "op2", "op3", "op4")) { prunedOps =>
           (
             Map(
               "op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set()),
@@ -217,7 +217,7 @@ class IncrementalSpec extends Specification {
             ),
             prunedOps must_== List("op1", "op3", "op4")
           )
-        }
+        }._2
       }
     }
 
@@ -225,12 +225,12 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
 
         // Create an empty cache
-        runIncremental(tmpDir, List[String]()) { prunedOps =>
+        syncIncremental(tmpDir, List[String]()) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List()
           )
-        }
+        }._2
 
         val cacheFile = new File(tmpDir, "op-cache")
         val emptyCacheFileLength = cacheFile.length()
@@ -240,23 +240,23 @@ class IncrementalSpec extends Specification {
 
         // Run with a successful op that will be cached
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set())),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         cacheFile.length() must_!= emptyCacheFileLength
 
         // Run with different set of ops - should vacuum old ops
 
-        runIncremental(tmpDir, List("op9")) { prunedOps =>
+        syncIncremental(tmpDir, List("op9")) { prunedOps =>
           (
             Map("op9" -> OpFailure),
             prunedOps must_== List("op9")
           )
-        }
+        }._2
 
         // Check cache file is empty again, i.e. op1 has been vacuumed
 
@@ -279,40 +279,40 @@ class IncrementalSpec extends Specification {
 
         hashPrefix = "1/"
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
 
         // No ops should run because we leave the hash prefix the same
 
         hashPrefix = "1/"
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map(),
             prunedOps must_== List()
           )
-        }
+        }._2
 
         // All ops should run again because we changed the hash prefix
 
         hashPrefix = "2/"
 
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
           )
-        }
+        }._2
       }
     }
 
     "fail when runOps gives result for unknown op" in {
       IO.withTemporaryDirectory { tmpDir =>
-        runIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map[String,OpResult]("op2" -> OpFailure),
             prunedOps must_== List("op1")
