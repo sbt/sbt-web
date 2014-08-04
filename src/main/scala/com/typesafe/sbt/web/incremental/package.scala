@@ -107,7 +107,7 @@ package object incremental {
    * Callers must provide an implicit OpInputHasher so that the API can
    * distinguish different operations’ parameters.
    */
-  @deprecated("Use syncIncremental to ensure old products are deleted", "1.0.1")
+  @deprecated("Use syncIncremental to ensure old products are deleted. Will be removed for 1.2.", "1.0.1")
   def runIncremental[Op,A](
       cacheDirectory: File, ops: Seq[Op])(
       runOps: Seq[Op] => (Map[Op, OpResult], A))(
@@ -151,31 +151,31 @@ package object incremental {
    *
    * @tparam Op The Op type parameter gives the type of the individual
    * operations. There are no restrictions on which type callers
-   * should use here. The runIncremental method treats Op as a
+   * should use here. The syncIncremental method treats Op as a
    * completely opaque type. The caller can use whatever abstract
    * representation of operations is most convenient; functions,
    * strings, custom classes, etc are all possible. The only
    * requirement is that the caller must provide two arguments to
-   * allow runIncremental to work with operations: runOps to run a
+   * allow syncIncremental to work with operations: runOps to run a
    * sequence of operations and return the operations’ results and
    * inputHasher to get a hash of an operation’s inputs.
    *
    * @tparam A The A type parameter gives the return type of the
-   * runIncremental method. The runOps method returns a value of type
-   * A and this value is then returned by the runIncremental method.
+   * syncIncremental method. The runOps method returns a value of type
+   * A and this value is then returned by the syncIncremental method.
    *
    * @param cacheDirectory A parent directory for a cache file that
    *                       will be used for caching information between
    *                       invocations.
    *
    * @param ops The ops parameter is a list of possible operations to
-   * perform. The runIncremental method will prune this list and call
+   * perform. The syncIncremental method will prune this list and call
    * the run parameter with the pruned list.
    *
    * @param runOps The runOps function returns a (Map[Op,OpResult],A).
    * The Map[Op,OpResult] is used to update the cache of operations.
-   * The A value is used by runIncremental as its return value for
-   * runIncremental method.
+   * The A value is used by syncIncremental as its return value for
+   * syncIncremental method.
    *
    * Each OpResult can be either an OpSuccess or an OpFailure. If an
    * operation succeeded, it should return the paths of any files it read
@@ -196,7 +196,7 @@ package object incremental {
    *   in a special way
    *   {{{throw new DecodeException(“Couldn’t compile: failed to decode ”)}}}
    *
-   * @param inputHasher The inputHasher implicit parameter lets the runIncremental
+   * @param inputHasher The inputHasher implicit parameter lets the syncIncremental
    * method distinguish between operations’ input parameters. In addition to
    * reading and writing files, operations usually take input
    * parameters, for example compilation settings. The incremental API
