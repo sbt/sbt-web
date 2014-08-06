@@ -150,6 +150,56 @@ Source file tasks can be considered to provide files for the first stage of asse
 executed often e.g. for each compilation of your project's source files. Asset pipeline tasks are generally executed at the time
 that you wish to prepare a distribution for deployment into, say, production.
 
+Exporting Assets
+----------------
+
+Assets are automatically available across subproject dependencies using sbt's
+classpath setup. The assets are exported in the webjar format and are imported
+in the same way as other webjar dependencies.
+
+So given a project dependency like this, where project A depends on project B:
+
+```scala
+lazy val a = (project in file("a"))
+  .enablePlugins(SbtWeb)
+  .dependsOn(b)
+
+lazy val b = (project in file("b"))
+  .enablePlugins(SbtWeb)
+```
+
+Assets from project B are available to project A under `lib/b/`.
+
+The module name for imported assets is the same as the project module name (the
+normalized name of the project). This can be changed with the
+`moduleName in Assets` setting.
+
+Test assets are also exported if a test dependency is specified. For example:
+
+```scala
+lazy val a = (project in file("a"))
+  .enablePlugins(SbtWeb)
+  .dependsOn(b % "compile;test->test")
+```
+
+### Packaging and Publishing
+
+Assets are automatically packaged and published along with project classes. This
+means that assets can be shared as external library dependencies. Simply publish
+the project and use as a library dependency. The assets will be extracted and
+available under `lib/module/` in the same way as other webjar dependencies or
+internal dependencies.
+
+To package all assets for production there is a `packageBin in Assets` task,
+`web-assets:package` in the sbt shell. This packages the result of the asset
+pipeline. An optional path prefix can be specified with the `packagePrefix in
+Assets` setting. For example, to have assets packaged under a `public`
+directory, as used for Play Framework distributions:
+
+```scala
+WebKeys.packagePrefix in Assets := "public/"
+```
+
 Writing a Source File task
 --------------------------
 
