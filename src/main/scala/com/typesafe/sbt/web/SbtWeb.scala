@@ -300,7 +300,7 @@ object SbtWeb extends AutoPlugin {
    * Use the webjars path prefix and exclude all web module assets.
    */
   def createWebJarMappings = Def.task {
-    val prefix = s"${WEBJARS_PATH_PREFIX}/${moduleName.value}/${version.value}/"
+    val prefix = path(s"${WEBJARS_PATH_PREFIX}/${moduleName.value}/${version.value}/")
     def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
     mappings.value flatMap {
       case (file, path) if webModule(file) => None
@@ -349,7 +349,7 @@ object SbtWeb extends AutoPlugin {
     val moduleMappings = (mappings in webModules).value
     if (directModules.nonEmpty) {
       val prefixes = directModules map {
-        module => s"${webModulesLib.value}/${module}/"
+        module => path(s"${webModulesLib.value}/${module}/")
       }
       moduleMappings map {
         case (file, path) => file -> stripPrefixes(path, prefixes)
@@ -357,6 +357,13 @@ object SbtWeb extends AutoPlugin {
     } else {
       moduleMappings
     }
+  }
+
+  /**
+   * Transform normalized paths into platform-specific paths.
+   */
+  def path(normalized: String, separator: Char = java.io.File.separatorChar): String = {
+    if (separator == '/') normalized else normalized.replace('/', separator)
   }
 
   private def stripPrefixes(s: String, prefixes: Seq[String]): String = {
