@@ -32,6 +32,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-filter](https://github.com/rgcottrell/sbt-filter)
 * [sbt-gzip](https://github.com/sbt/sbt-gzip#sbt-gzip)
 * [sbt-handlebars](https://github.com/Amadeus82/sbt-handlebars)
+* [sbt-html-js-wrap](https://github.com/kolloch/sbt-html-js-wrap)
 * [sbt-html-minifier](https://github.com/rgcottrell/sbt-html-minifier)
 * [sbt-imagemin](https://github.com/rgcottrell/sbt-imagemin)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
