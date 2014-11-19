@@ -186,8 +186,11 @@ lazy val a = (project in file("a"))
 
 ### Packaging and Publishing
 
-Assets are automatically packaged and published along with project classes. This
-means that assets can be shared as external library dependencies. Simply publish
+*The packaging and publishing behavior is documented for sbt-web version `1.1.0` and above.*
+
+Assets are automatically packaged and published along with project classes
+at the following path inside the jar: `META-INF/resources/webjars/module/version/`.
+This means that assets can be shared as external library dependencies. Simply publish
 the project and use as a library dependency. The assets will be extracted and
 available under `lib/module/` in the same way as other webjar dependencies or
 internal dependencies.
@@ -200,6 +203,12 @@ directory, as used for Play Framework distributions:
 
 ```scala
 WebKeys.packagePrefix in Assets := "public/"
+```
+
+To automatically add the production-ready assets to classpath, the following might be useful:
+
+```scala
+(managedClasspath in Runtime) += (packageBin in Assets).value
 ```
 
 Writing a Source File task
