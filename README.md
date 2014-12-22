@@ -212,6 +212,13 @@ To automatically add the production-ready assets to classpath, the following mig
 (managedClasspath in Runtime) += (packageBin in Assets).value
 ```
 
+For those using [xsbt-web-plugin](https://github.com/earldouglas/xsbt-web-plugin),
+this setting adds public resources to the container:
+
+```scala
+(webappResources in Compile) += (WebKeys.public in Assets).value
+```
+
 Writing a Source File task
 --------------------------
 
