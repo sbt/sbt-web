@@ -213,7 +213,9 @@ To automatically add the production-ready assets to classpath, the following mig
 ```
 
 For those using [xsbt-web-plugin](https://github.com/earldouglas/xsbt-web-plugin),
-this setting adds public resources to the container:
+the next setting adds public resources to the container.
+Note that it seems to be reset by the Scalatra plugin, thus the plugin’s settings
+have to be applied first.
 
 ```scala
 (webappResources in Compile) += (WebKeys.public in Assets).value
