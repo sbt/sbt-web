@@ -45,6 +45,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-rjs](https://github.com/sbt/sbt-rjs#sbt-rjs)
 * [sbt-simple-url-update](https://github.com/neomaclin/sbt-simple-url-update#sbt-simple-url-update)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
+* [sbt-traceur](https://github.com/arielscarpinelli/sbt-traceur)
 * [sbt-uglify](https://github.com/sbt/sbt-uglify)
 
 Ideas for Plugins
