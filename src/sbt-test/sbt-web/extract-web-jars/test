@@ -14,9 +14,9 @@ $ exists target/web/node-modules/main/webjars/less/package.json
 > assets
 # sleep either side of creating foo to ensure the modification time is newer than extracted web jars
 # but older than whatever is done next
-$ sleep 1
+$ sleep 1000
 $ touch target/foo
-$ sleep 1
+$ sleep 1000
 > assets
 # jquery.js should not have been re-extracted, assert that it is older
 $ newer target/foo target/web/public/main/lib/jquery/jquery.js

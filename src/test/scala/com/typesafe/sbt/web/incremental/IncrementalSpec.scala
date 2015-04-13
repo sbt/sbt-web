@@ -1,12 +1,9 @@
 package com.typesafe.sbt.web.incremental
 
 import java.io.File
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import org.specs2.mutable.Specification
 import _root_.sbt.IO
 
-@RunWith(classOf[JUnitRunner])
 class IncrementalSpec extends Specification {
 
   sequential
