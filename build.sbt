@@ -1,8 +1,8 @@
-import bintray.Keys._
-
 organization := "com.typesafe.sbt"
 name := "sbt-web"
 description := "sbt web support"
+homepage := Some(url("https://github.com/sbt/sbt-web"))
+licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
 sbtPlugin := true
 scalaVersion := "2.10.4"
@@ -20,11 +20,3 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 scriptedSettings
 scriptedLaunchOpts += "-Dproject.version=" + version.value
-
-// Publish settings
-bintrayPublishSettings
-publishMavenStyle := false
-bintrayOrganization in bintray := Some("sbt-web")
-repository in bintray := "sbt-plugin-releases"
-homepage := Some(url("https://github.com/sbt/sbt-web"))
-licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
