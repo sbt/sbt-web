@@ -4,7 +4,7 @@ description := "sbt web support"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.9",
-  "org.webjars" % "webjars-locator" % "0.25",
+  "org.webjars" % "webjars-locator" % "0.26",
   "org.specs2" %% "specs2-core" % "3.4" % "test",
   "junit" % "junit" % "4.12" % "test"
 )
