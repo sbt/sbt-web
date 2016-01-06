@@ -144,6 +144,15 @@ object SbtWeb extends AutoPlugin {
     onUnload in Global := (onUnload in Global).value andThen unload
   )
 
+  override def buildSettings: Seq[Def.Setting[_]] = Seq(
+    nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
+    webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
+    webJarsClassLoader in Plugin := SbtWeb.getClass.getClassLoader,
+    baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
+    target in Plugin := (baseDirectory in Plugin).value / "target",
+    crossTarget in Plugin := Defaults.makeCrossTarget((target in Plugin).value, scalaBinaryVersion.value, sbtBinaryVersion.value, plugin = true, crossPaths.value)
+  ) ++ inConfig(Plugin)(nodeModulesSettings)
+
   override def projectSettings: Seq[Setting[_]] = Seq(
     reporter := new LoggerReporter(5, streams.value.log),
 
@@ -170,7 +179,6 @@ object SbtWeb extends AutoPlugin {
 
     nodeModuleDirectory in Assets := webTarget.value / "node-modules" / "main",
     nodeModuleDirectory in TestAssets := webTarget.value / "node-modules" / "test",
-    nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
 
     webModuleDirectory in Assets := webTarget.value / "web-modules" / "main",
     webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
@@ -186,10 +194,8 @@ object SbtWeb extends AutoPlugin {
     webJarsCache in webJars in TestAssets := webTarget.value / "web-modules" / "webjars-test.cache",
     webJarsCache in nodeModules in Assets := webTarget.value / "node-modules" / "webjars-main.cache",
     webJarsCache in nodeModules in TestAssets := webTarget.value / "node-modules" / "webjars-test.cache",
-    webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
     webJarsClassLoader in Assets := classLoader((dependencyClasspath in Compile).value),
     webJarsClassLoader in TestAssets := classLoader((dependencyClasspath in Test).value),
-    webJarsClassLoader in Plugin := SbtWeb.getClass.getClassLoader,
 
     assets := (assets in Assets).value,
 
@@ -222,16 +228,10 @@ object SbtWeb extends AutoPlugin {
       streams.value.cacheDirectory,
       pipeline.value,
       stagingDirectory.value
-    ),
-
-    baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
-    target in Plugin := (baseDirectory in Plugin).value / "target",
-    crossTarget in Plugin := Defaults.makeCrossTarget((target in Plugin).value, scalaBinaryVersion.value, sbtBinaryVersion.value, plugin = true, crossPaths.value)
-
+    )
   ) ++
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
-    inConfig(Plugin)(nodeModulesSettings) ++
     packageSettings
 
 
@@ -506,7 +506,7 @@ object SbtWeb extends AutoPlugin {
         val fromFile = if (url.getProtocol == "file") {
           new File(url.toURI)
         } else if (url.getProtocol == "jar") {
-          new File(url.getFile.split('!')(0))
+          new File(url.getFile.split('!').last)
         } else {
           throw new RuntimeException(s"Unknown protocol: $url")
         }
