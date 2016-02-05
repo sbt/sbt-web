@@ -203,7 +203,30 @@ object SbtWeb extends AutoPlugin {
     mappings in (Test, packageBin) ++= (exportedMappings in TestAssets).value,
     exportedProducts in Compile ++= exportAssets(Assets, Compile).value,
     exportedProducts in Test ++= exportAssets(TestAssets, Test).value,
-
+    CompatKeys.exportedProductsIfMissing in Compile := {
+      ((CompatKeys.exportedProductsIfMissing in Compile).?).value match {
+        case Some(x) => x ++ exportAssets(Assets, Compile).value
+        case None    => Nil
+      }
+    },
+    CompatKeys.exportedProductsIfMissing in Test := {
+      ((CompatKeys.exportedProductsIfMissing in Test).?).value match {
+        case Some(x) => x ++ exportAssets(TestAssets, Test).value
+        case None    => Nil
+      }
+    },
+    CompatKeys.exportedProductsNoTracking in Compile := {
+      ((CompatKeys.exportedProductsNoTracking in Compile).?).value match {
+        case Some(x) => x ++ exportAssets(Assets, Compile).value
+        case None    => Nil
+      }
+    },
+    CompatKeys.exportedProductsNoTracking in Test := {
+      ((CompatKeys.exportedProductsNoTracking in Test).?).value match {
+        case Some(x) => x ++ exportAssets(TestAssets, Test).value
+        case None    => Nil
+      }
+    },
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
     compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
