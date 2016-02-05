@@ -331,8 +331,9 @@ object SbtWeb extends AutoPlugin {
     }
   }
 
-  def exportAssets(assetConf: Configuration, exportConf: Configuration) = Def.task {
-    if ((exportJars in exportConf).value) Seq.empty else (exportedProducts in assetConf).value
+  def exportAssets(assetConf: Configuration, exportConf: Configuration): Def.Initialize[Task[Classpath]] = Def.taskDyn {
+    if ((exportJars in exportConf).value) Def.task { Seq.empty }
+    else (exportedProducts in assetConf)
   }
 
   def packageSettings: Seq[Setting[_]] = inConfig(Assets)(
