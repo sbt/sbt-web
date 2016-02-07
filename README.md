@@ -51,6 +51,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-traceur](https://github.com/arielscarpinelli/sbt-traceur)
 * [sbt-uglify](https://github.com/sbt/sbt-uglify)
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
+* [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
 
 Ideas for Plugins
 -----------------
