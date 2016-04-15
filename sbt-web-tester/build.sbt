@@ -1,11 +1,29 @@
-import com.typesafe.sbt.web.pipeline.Pipeline
+lazy val a = (project in file("."))
+  .enablePlugins(SbtWeb)
+  .dependsOn(b)
 
-val root = (project in file(".")).enablePlugins(SbtWeb)
+lazy val b = (project in file("modules/b"))
+  .enablePlugins(SbtWeb)
+  .dependsOn(c % "compile;test->test", d % "compile;test->test")
+  .settings(
+    WebKeys.directWebModules in TestAssets := Nil
+  )
 
-libraryDependencies += "org.webjars" % "jquery" % "2.0.3-1"
+lazy val c = (project in file("modules/c"))
+  .enablePlugins(SbtWeb)
+  .dependsOn(e % "compile;test->test", x)
+  .settings(
+    WebKeys.importDirectly := true
+  )
 
-val myPipelineTask = taskKey[Pipeline.Stage]("Some pipeline task")
+lazy val d = (project in file("modules/d"))
+  .enablePlugins(SbtWeb)
+  .dependsOn(e % "compile;test->test", x)
 
-myPipelineTask := identity
+lazy val e = (project in file("modules/e"))
+  .enablePlugins(SbtWeb)
+  .settings(
+    libraryDependencies += "org.webjars" % "jquery" % "2.0.3-1"
+  )
 
-pipelineStages := Seq(myPipelineTask)
+lazy val x = (project in file("modules/x"))

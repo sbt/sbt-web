@@ -55,6 +55,8 @@ object Import {
 
     val exportedMappings = TaskKey[Seq[PathMapping]]("web-exported-mappings", "Asset mappings in WebJar format for exporting and packaging.")
     val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
+    val exportedAssetsIfMissing = TaskKey[File]("web-exported-directory-if-missing", "Directory with assets in WebJar format, but only when missing from a tracking perspective.")
+    val exportedAssetsNoTracking = TaskKey[File]("web-exported-directory-no-tracking", "Directory with assets in WebJar format, but no tracking from a tracking perspective.")
 
     val allPipelineStages = TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
@@ -201,32 +203,12 @@ object SbtWeb extends AutoPlugin {
 
     mappings in (Compile, packageBin) ++= (exportedMappings in Assets).value,
     mappings in (Test, packageBin) ++= (exportedMappings in TestAssets).value,
-    exportedProducts in Compile ++= exportAssets(Assets, Compile).value,
-    exportedProducts in Test ++= exportAssets(TestAssets, Test).value,
-    CompatKeys.exportedProductsIfMissing in Compile := {
-      ((CompatKeys.exportedProductsIfMissing in Compile).?).value match {
-        case Some(x) => x ++ exportAssets(Assets, Compile).value
-        case None    => Nil
-      }
-    },
-    CompatKeys.exportedProductsIfMissing in Test := {
-      ((CompatKeys.exportedProductsIfMissing in Test).?).value match {
-        case Some(x) => x ++ exportAssets(TestAssets, Test).value
-        case None    => Nil
-      }
-    },
-    CompatKeys.exportedProductsNoTracking in Compile := {
-      ((CompatKeys.exportedProductsNoTracking in Compile).?).value match {
-        case Some(x) => x ++ exportAssets(Assets, Compile).value
-        case None    => Nil
-      }
-    },
-    CompatKeys.exportedProductsNoTracking in Test := {
-      ((CompatKeys.exportedProductsNoTracking in Test).?).value match {
-        case Some(x) => x ++ exportAssets(TestAssets, Test).value
-        case None    => Nil
-      }
-    },
+    exportedProducts in Compile ++= exportAssets(Assets, Compile, TrackLevel.TrackAlways).value,
+    exportedProducts in Test ++= exportAssets(TestAssets, Test, TrackLevel.TrackAlways).value,
+    exportedProductsIfMissing in Compile ++= exportAssets(Assets, Compile, TrackLevel.TrackIfMissing).value,
+    exportedProductsIfMissing in Test  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
+    exportedProductsNoTracking in Compile ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
+    exportedProductsNoTracking in Test ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
     compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
@@ -304,8 +286,12 @@ object SbtWeb extends AutoPlugin {
     assets := syncMappings(streams.value.cacheDirectory, mappings.value, public.value),
 
     exportedMappings <<= createWebJarMappings,
-    exportedAssets := syncMappings(streams.value.cacheDirectory, exportedMappings.value, classDirectory.value),
-    exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value))
+    exportedAssets <<= syncExportedAssets(TrackLevel.TrackAlways),
+    exportedAssetsIfMissing <<= syncExportedAssets(TrackLevel.TrackIfMissing),
+    exportedAssetsNoTracking <<= syncExportedAssets(TrackLevel.NoTracking),
+    exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value)),
+    exportedProductsIfMissing := Seq(Attributed.blank(exportedAssetsIfMissing.value).put(webModulesLib.key, moduleName.value)),
+    exportedProductsNoTracking := Seq(Attributed.blank(exportedAssetsNoTracking.value).put(webModulesLib.key, moduleName.value))
   )
 
   val nodeModulesSettings = Seq(
@@ -318,22 +304,50 @@ object SbtWeb extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
+  def webJarsPathPrefix: Def.Initialize[Task[String]] = Def.task {
+    path(s"$WEBJARS_PATH_PREFIX/${moduleName.value}/${version.value}/")
+  }
+
+  def syncExportedAssets(track: TrackLevel): Def.Initialize[Task[File]] = Def.task {
+    val syncTargetDir = classDirectory.value
+    val syncRequired = TrackLevel.intersection(track, exportToInternal.value) match {
+      case TrackLevel.TrackAlways =>
+        true
+      case TrackLevel.TrackIfMissing | TrackLevel.NoTracking =>
+        !(syncTargetDir / webJarsPathPrefix.value).exists()
+    }
+    if (syncRequired) {
+      state.value.log.info(s"Exporting ${configuration.value}:${moduleName.value}")
+      syncMappings(streams.value.cacheDirectory, exportedMappings.value, syncTargetDir)
+    } else
+      syncTargetDir
+  }
+
   /**
    * Create package mappings for assets in the webjar format.
    * Use the webjars path prefix and exclude all web module assets.
    */
-  def createWebJarMappings = Def.task {
-    val prefix = path(s"${WEBJARS_PATH_PREFIX}/${moduleName.value}/${version.value}/")
+  def createWebJarMappings: Def.Initialize[Task[Seq[(File, String)]]] = Def.task {
     def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
     mappings.value flatMap {
       case (file, path) if webModule(file) => None
-      case (file, path) => Some(file -> (prefix + path))
+      case (file, path) => Some(file -> (webJarsPathPrefix.value + path))
     }
   }
 
-  def exportAssets(assetConf: Configuration, exportConf: Configuration): Def.Initialize[Task[Classpath]] = Def.taskDyn {
-    if ((exportJars in exportConf).value) Def.task { Seq.empty }
-    else (exportedProducts in assetConf)
+  def exportAssets(assetConf: Configuration, exportConf: Configuration, track: TrackLevel): Def.Initialize[Task[Classpath]] = Def.taskDyn {
+    if ((exportJars in exportConf).value) Def.task {
+      Seq.empty
+    } else {
+      track match {
+        case TrackLevel.TrackAlways =>
+          exportedProducts in assetConf
+        case TrackLevel.TrackIfMissing =>
+          exportedProductsIfMissing in assetConf
+        case TrackLevel.NoTracking =>
+          exportedProductsNoTracking in assetConf
+      }
+    }
   }
 
   def packageSettings: Seq[Setting[_]] = inConfig(Assets)(
@@ -498,6 +512,7 @@ object SbtWeb extends AutoPlugin {
 
   /**
    * Efficiently synchronize a sequence of mappings with a target folder.
+   *
    * @param cacheDir the cache directory.
    * @param mappings the mappings to sync.
    * @param target  the destination directory to sync to.
@@ -583,6 +598,7 @@ object SbtWeb extends AutoPlugin {
 
   /**
    * Perform actor related activity with sbt-web's actor system.
+   *
    * @param state The project build state available to the task invoking this.
    * @param namespace A means by which actors can be namespaced.
    * @param block The block of code to execute.
