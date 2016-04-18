@@ -68,3 +68,16 @@ $ exists modules/d/target/web/public/test/lib/jquery/jquery.js
 $ exists modules/e/target/web/public/test/js/e.js
 $ exists modules/e/target/web/public/test/js/t.js
 $ exists modules/e/target/web/public/test/lib/jquery/jquery.js
+
+# Let's optimize the syncing
+
+> set trackInternalDependencies in ThisBuild := TrackLevel.TrackIfMissing
+
+> a/assets
+
+$ exists target/web/public/main/lib/e/js/e.js
+
+> e/clean
+> a/assets
+
+$ exists target/web/public/main/lib/e/js/e.js
