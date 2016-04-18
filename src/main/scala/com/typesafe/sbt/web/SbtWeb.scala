@@ -4,8 +4,8 @@ import com.typesafe.config.{ConfigException, ConfigFactory}
 import sbt._
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
-import akka.actor.{ActorSystem, ActorRefFactory}
-import org.webjars.{WebJarExtractor, FileSystemCache}
+import akka.actor.{ActorRefFactory, ActorSystem}
+import org.webjars.{FileSystemCache, WebJarExtractor}
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
@@ -231,6 +231,7 @@ object SbtWeb extends AutoPlugin {
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
       streams.value.cacheDirectory,
+      "sync-stage",
       pipeline.value,
       stagingDirectory.value
     )
@@ -283,7 +284,7 @@ object SbtWeb extends AutoPlugin {
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value),
 
-    assets := syncMappings(streams.value.cacheDirectory, mappings.value, public.value),
+    assets := syncMappings(streams.value.cacheDirectory, s"sync-assets-" + configuration.value.name, mappings.value, public.value),
 
     exportedMappings <<= createWebJarMappings,
     exportedAssets <<= syncExportedAssets(TrackLevel.TrackAlways),
@@ -308,7 +309,7 @@ object SbtWeb extends AutoPlugin {
     path(s"$WEBJARS_PATH_PREFIX/${moduleName.value}/${version.value}/")
   }
 
-  def syncExportedAssets(track: TrackLevel): Def.Initialize[Task[File]] = Def.task {
+  def syncExportedAssets(track: TrackLevel): Def.Initialize[Task[File]] = Def.taskDyn {
     val syncTargetDir = classDirectory.value
     val syncRequired = TrackLevel.intersection(track, exportToInternal.value) match {
       case TrackLevel.TrackAlways =>
@@ -316,11 +317,11 @@ object SbtWeb extends AutoPlugin {
       case TrackLevel.TrackIfMissing | TrackLevel.NoTracking =>
         !(syncTargetDir / webJarsPathPrefix.value).exists()
     }
-    if (syncRequired) {
+    if (syncRequired) Def.task {
       state.value.log.info(s"Exporting ${configuration.value}:${moduleName.value}")
-      syncMappings(streams.value.cacheDirectory, exportedMappings.value, syncTargetDir)
+      syncMappings(streams.value.cacheDirectory, "sync-exported-assets-" + configuration.value.name, exportedMappings.value, syncTargetDir)
     } else
-      syncTargetDir
+      Def.task(syncTargetDir)
   }
 
   /**
@@ -514,12 +515,13 @@ object SbtWeb extends AutoPlugin {
    * Efficiently synchronize a sequence of mappings with a target folder.
    *
    * @param cacheDir the cache directory.
+   * @param cacheName the distinct name of a cache to use.
    * @param mappings the mappings to sync.
    * @param target  the destination directory to sync to.
    * @return the target value
    */
-  def syncMappings(cacheDir: File, mappings: Seq[PathMapping], target: File): File = {
-    val cache = cacheDir / "sync-mappings"
+  def syncMappings(cacheDir: File, cacheName: String, mappings: Seq[PathMapping], target: File): File = {
+    val cache = cacheDir / cacheName
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
