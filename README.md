@@ -37,6 +37,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-html-js-wrap](https://github.com/kolloch/sbt-html-js-wrap)
 * [sbt-html-minifier](https://github.com/rgcottrell/sbt-html-minifier)
 * [sbt-imagemin](https://github.com/rgcottrell/sbt-imagemin)
+* [sbt-jasmine](https://github.com/joost-de-vries/sbt-jasmine)
 * [sbt-jshint](https://github.com/sbt/sbt-jshint#sbt-jshint)
 * [sbt-jst](https://github.com/matthewrennie/sbt-jst)
 * [sbt-less](https://github.com/sbt/sbt-less#sbt-less)
@@ -49,15 +50,9 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-simple-url-update](https://github.com/neomaclin/sbt-simple-url-update#sbt-simple-url-update)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
 * [sbt-traceur](https://github.com/arielscarpinelli/sbt-traceur)
-* [sbt-uglify](https://github.com/sbt/sbt-uglify)
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
 * [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
-
-Ideas for Plugins
------------------
-
-* [jasmine](http://jasmine.github.io/)
-* [handlebars](http://handlebarsjs.com/)
+* [sbt-uglify](https://github.com/sbt/sbt-uglify)
 
 Plugins in Development
 ----------------------
