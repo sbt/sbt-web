@@ -186,8 +186,8 @@ object SbtWeb extends AutoPlugin {
     webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
-    internalWebModules in Assets <<= getInternalWebModules(Compile),
-    internalWebModules in TestAssets <<= getInternalWebModules(Test),
+    internalWebModules in Assets := getInternalWebModules(Compile).value,
+    internalWebModules in TestAssets := getInternalWebModules(Test).value,
     importDirectly := false,
     directWebModules in Assets := Nil,
     directWebModules in TestAssets := Seq((moduleName in Assets).value),
@@ -211,18 +211,18 @@ object SbtWeb extends AutoPlugin {
     exportedProductsNoTracking in Test ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
     compile in Assets := inc.Analysis.Empty,
     compile in TestAssets := inc.Analysis.Empty,
-    compile in TestAssets <<= (compile in TestAssets).dependsOn(compile in Assets),
+    compile in TestAssets := (compile in TestAssets).dependsOn(compile in Assets).value,
 
     test in TestAssets :=(),
-    test in TestAssets <<= (test in TestAssets).dependsOn(compile in TestAssets),
+    test in TestAssets := (test in TestAssets).dependsOn(compile in TestAssets),
 
-    watchSources <++= unmanagedSources in Assets,
-    watchSources <++= unmanagedSources in TestAssets,
-    watchSources <++= unmanagedResources in Assets,
-    watchSources <++= unmanagedResources in TestAssets,
+    watchSources ++= (unmanagedSources in Assets).value,
+    watchSources ++= (unmanagedSources in TestAssets).value,
+    watchSources ++= (unmanagedResources in Assets).value,
+    watchSources ++= (unmanagedResources in TestAssets).value,
 
     pipelineStages := Seq.empty,
-    allPipelineStages <<= Pipeline.chain(pipelineStages),
+    allPipelineStages := Pipeline.chain(pipelineStages).value,
     pipeline := allPipelineStages.value((mappings in Assets).value),
 
     deduplicators := Nil,
@@ -251,7 +251,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSources := unmanagedSourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
-    mappings in sources <<= relativeMappings(sources, sourceDirectories),
+    mappings in sources := relativeMappings(sources, sourceDirectories).value,
 
     resourceGenerators := Nil,
     managedResourceDirectories := Nil,
@@ -260,25 +260,25 @@ object SbtWeb extends AutoPlugin {
     unmanagedResources := unmanagedResourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
-    mappings in resources <<= relativeMappings(resources, resourceDirectories),
+    mappings in resources := relativeMappings(resources, resourceDirectories).value,
 
     webModuleGenerators := Nil,
     webModuleDirectories := Nil,
     webModules := webModuleGenerators(_.join).map(_.flatten).value,
-    mappings in webModules <<= relativeMappings(webModules, webModuleDirectories),
-    mappings in webModules <<= flattenDirectWebModules,
+    mappings in webModules := relativeMappings(webModules, webModuleDirectories).value,
+    mappings in webModules := flattenDirectWebModules.value,
 
     directWebModules ++= { if (importDirectly.value) internalWebModules.value else Seq.empty },
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
     webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
-    webModuleGenerators <+= webJars,
+    webModuleGenerators += webJars.taskValue,
     webModuleDirectories += webJarsDirectory.value,
 
     mappings := (mappings in sources).value ++ (mappings in resources).value ++ (mappings in webModules).value,
 
     pipelineStages := Seq.empty,
-    allPipelineStages <<= Pipeline.chain(pipelineStages),
+    allPipelineStages := Pipeline.chain(pipelineStages).value,
     mappings := allPipelineStages.value(mappings.value),
 
     deduplicators := Nil,
@@ -286,10 +286,10 @@ object SbtWeb extends AutoPlugin {
 
     assets := syncMappings(streams.value.cacheDirectory, s"sync-assets-" + configuration.value.name, mappings.value, public.value),
 
-    exportedMappings <<= createWebJarMappings,
-    exportedAssets <<= syncExportedAssets(TrackLevel.TrackAlways),
-    exportedAssetsIfMissing <<= syncExportedAssets(TrackLevel.TrackIfMissing),
-    exportedAssetsNoTracking <<= syncExportedAssets(TrackLevel.NoTracking),
+    exportedMappings := createWebJarMappings.value,
+    exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
+    exportedAssetsIfMissing := syncExportedAssets(TrackLevel.TrackIfMissing).value,
+    exportedAssetsNoTracking := syncExportedAssets(TrackLevel.NoTracking).value,
     exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value)),
     exportedProductsIfMissing := Seq(Attributed.blank(exportedAssetsIfMissing.value).put(webModulesLib.key, moduleName.value)),
     exportedProductsNoTracking := Seq(Attributed.blank(exportedAssetsNoTracking.value).put(webModulesLib.key, moduleName.value))
@@ -300,7 +300,7 @@ object SbtWeb extends AutoPlugin {
     webJarsNodeModules := generateNodeWebJars(webJarsNodeModulesDirectory.value, (webJarsCache in nodeModules).value, webJarsClassLoader.value),
 
     nodeModuleGenerators := Nil,
-    nodeModuleGenerators <+= webJarsNodeModules,
+    nodeModuleGenerators += webJarsNodeModules.taskValue,
     nodeModuleDirectories := Seq(webJarsNodeModulesDirectory.value),
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )

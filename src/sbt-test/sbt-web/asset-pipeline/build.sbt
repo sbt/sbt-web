@@ -18,7 +18,7 @@ coffee := {
   copies map (_._2)
 }
 
-sourceGenerators in Assets <+= coffee
+sourceGenerators in Assets += coffee.taskValue
 
 val jsmin = taskKey[Pipeline.Stage]("mock js minifier")
 
