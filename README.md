@@ -230,7 +230,7 @@ val mySourceFileTask = taskKey[Seq[File]]("Some source file task")
 
 mySourceFileTask := Nil
 
-sourceGenerators in Assets <+= mySourceFileTask
+sourceGenerators in Assets += mySourceFileTask.taskValue
 ```
 
 The addition of the `mySourceFileTask` to `sourceGenerators in Assets` declares the task as a resource generator and,
