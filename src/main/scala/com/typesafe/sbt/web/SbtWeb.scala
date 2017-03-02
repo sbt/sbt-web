@@ -318,7 +318,7 @@ object SbtWeb extends AutoPlugin {
         !(syncTargetDir / webJarsPathPrefix.value).exists()
     }
     if (syncRequired) Def.task {
-      state.value.log.info(s"Exporting ${configuration.value}:${moduleName.value}")
+      state.value.log.debug(s"Exporting ${configuration.value}:${moduleName.value}")
       syncMappings(streams.value.cacheDirectory, "sync-exported-assets-" + configuration.value.name, exportedMappings.value, syncTargetDir)
     } else
       Def.task(syncTargetDir)
