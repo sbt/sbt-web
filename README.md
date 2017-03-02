@@ -53,6 +53,13 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
 * [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
 * [sbt-uglify](https://github.com/sbt/sbt-uglify)
+* [sbt-web-scalajs](https://github.com/vmunier/sbt-web-scalajs)
+
+Ideas for Plugins
+-----------------
+
+* [jasmine](http://jasmine.github.io/)
+* [handlebars](http://handlebarsjs.com/)
 
 Plugins in Development
 ----------------------
@@ -99,7 +106,7 @@ project resources are generally not made public by a web server.
 
 In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
 files go into a `public` directory in the classpath.  By configuration, sbt-web apps serve static assets from the `public`
-directory on the classpath. For example a CoffeeScript plugin would use files from `unmanagedSources in Assets`
+directory on the classpath. For example a CoffeeScript plugin would use files from `sourceDirectory in Assets`
 and produce them to `resourceManaged in Assets`.
 
 All assets whether they need processing or are static in nature, will be copied to the resourceManaged destinations.
@@ -107,7 +114,7 @@ All assets whether they need processing or are static in nature, will be copied 
 Assets can be organized however desired within the `assets` directory.
 
 One last thing regarding the public and public-test folders... any WebJar depended on by the project will be automatically
-extracted into these folders e.g. target/web/public/lib/jquery/jquery.js. In addition the public-test folder receives
+extracted into these folders e.g. target/web/public/main/lib/jquery/jquery.js. In addition the public-test folder receives
 the contents of the public folder as well as test assets. This eases the support of test frameworks given that
 all files are locatable from one root.
 
@@ -225,7 +232,7 @@ val mySourceFileTask = taskKey[Seq[File]]("Some source file task")
 
 mySourceFileTask := Nil
 
-sourceGenerators in Assets <+= mySourceFileTask
+sourceGenerators in Assets += mySourceFileTask.taskValue
 ```
 
 The addition of the `mySourceFileTask` to `sourceGenerators in Assets` declares the task as a resource generator and,
