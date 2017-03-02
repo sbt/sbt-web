@@ -105,7 +105,7 @@ project resources are generally not made public by a web server.
 
 In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
 files go into a `public` directory in the classpath.  By configuration, sbt-web apps serve static assets from the `public`
-directory on the classpath. For example a CoffeeScript plugin would use files from `unmanagedSources in Assets`
+directory on the classpath. For example a CoffeeScript plugin would use files from `sourceDirectory in Assets`
 and produce them to `resourceManaged in Assets`.
 
 All assets whether they need processing or are static in nature, will be copied to the resourceManaged destinations.
