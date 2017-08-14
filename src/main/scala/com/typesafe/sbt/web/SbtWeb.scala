@@ -9,6 +9,7 @@ import org.webjars.{FileSystemCache, WebJarExtractor}
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
+import xsbti.Reporter
 
 object Import {
 
@@ -24,7 +25,7 @@ object Import {
     val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
 
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
-    val reporter = TaskKey[LoggerReporter]("web-reporter", "The reporter to use for conveying processing results.")
+    val reporter = TaskKey[Reporter]("web-reporter", "The reporter to use for conveying processing results.")
 
     val nodeModuleDirectory = SettingKey[File]("web-node-module-directory", "Default node modules directory, used for node based resources.")
     val nodeModuleDirectories = SettingKey[Seq[File]]("web-node-module-directories", "The list of directories that node modules are to expand into.")
@@ -156,7 +157,7 @@ object SbtWeb extends AutoPlugin {
   ) ++ inConfig(Plugin)(nodeModulesSettings)
 
   override def projectSettings: Seq[Setting[_]] = Seq(
-    reporter := new LoggerReporter(5, streams.value.log),
+    reporter := new CompileProblems.LoggerReporter(5, streams.value.log),
 
     webTarget := target.value / "web",
 
@@ -209,17 +210,17 @@ object SbtWeb extends AutoPlugin {
     exportedProductsIfMissing in Test  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
     exportedProductsNoTracking in Compile ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
     exportedProductsNoTracking in Test ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
-    compile in Assets := inc.Analysis.Empty,
-    compile in TestAssets := inc.Analysis.Empty,
+    compile in Assets := Compat.Analysis.Empty,
+    compile in TestAssets := Compat.Analysis.Empty,
     compile in TestAssets := (compile in TestAssets).dependsOn(compile in Assets).value,
 
-    test in TestAssets :=(),
+    test in TestAssets :=(()),
     test in TestAssets := (test in TestAssets).dependsOn(compile in TestAssets),
 
-    watchSources ++= (unmanagedSources in Assets).value,
-    watchSources ++= (unmanagedSources in TestAssets).value,
-    watchSources ++= (unmanagedResources in Assets).value,
-    watchSources ++= (unmanagedResources in TestAssets).value,
+    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
+    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
+    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
+    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
 
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
@@ -230,8 +231,7 @@ object SbtWeb extends AutoPlugin {
 
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
-      streams.value.cacheDirectory,
-      "sync-stage",
+      Compat.cacheStore(streams.value, "sync-stage"),
       pipeline.value,
       stagingDirectory.value
     )
@@ -268,7 +268,10 @@ object SbtWeb extends AutoPlugin {
     mappings in webModules := relativeMappings(webModules, webModuleDirectories).value,
     mappings in webModules := flattenDirectWebModules.value,
 
-    directWebModules ++= { if (importDirectly.value) internalWebModules.value else Seq.empty },
+    directWebModules ++= {
+      val modules = internalWebModules.value
+      if (importDirectly.value) modules else Seq.empty
+    },
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
     webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
@@ -284,7 +287,8 @@ object SbtWeb extends AutoPlugin {
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value),
 
-    assets := syncMappings(streams.value.cacheDirectory, s"sync-assets-" + configuration.value.name, mappings.value, public.value),
+    assets := syncMappings(Compat.cacheStore(streams.value, s"sync-assets-" + configuration.value.name),
+      mappings.value, public.value),
 
     exportedMappings := createWebJarMappings.value,
     exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
@@ -319,7 +323,8 @@ object SbtWeb extends AutoPlugin {
     }
     if (syncRequired) Def.task {
       state.value.log.debug(s"Exporting ${configuration.value}:${moduleName.value}")
-      syncMappings(streams.value.cacheDirectory, "sync-exported-assets-" + configuration.value.name, exportedMappings.value, syncTargetDir)
+      syncMappings(Compat.cacheStore(streams.value, "sync-exported-assets-" + configuration.value.name),
+        exportedMappings.value, syncTargetDir)
     } else
       Def.task(syncTargetDir)
   }
@@ -386,9 +391,10 @@ object SbtWeb extends AutoPlugin {
   def flattenDirectWebModules = Def.task {
     val directModules = directWebModules.value
     val moduleMappings = (mappings in webModules).value
+    val lib = webModulesLib.value
     if (directModules.nonEmpty) {
       val prefixes = directModules map {
-        module => path(s"${webModulesLib.value}/${module}/")
+        module => path(s"$lib/$module/")
       }
       moduleMappings map {
         case (file, path) => file -> stripPrefixes(path, prefixes)
@@ -425,7 +431,7 @@ object SbtWeb extends AutoPlugin {
     withWebJarExtractor(target, cache, classLoader) {
       (e, to) =>
         e.extractAllNodeModulesTo(to)
-    }.***.get
+    }.**(AllPassFilter).get
   }
 
   private def generateWebJars(target: File, lib: String, cache: File, classLoader: ClassLoader): Seq[File] = {
@@ -433,7 +439,7 @@ object SbtWeb extends AutoPlugin {
       (e, to) =>
         e.extractAllWebJarsTo(to)
     }
-    target.***.get
+    target.**(AllPassFilter).get
   }
 
   // Mapping deduplication
@@ -514,18 +520,16 @@ object SbtWeb extends AutoPlugin {
   /**
    * Efficiently synchronize a sequence of mappings with a target folder.
    *
-   * @param cacheDir the cache directory.
-   * @param cacheName the distinct name of a cache to use.
+   * @param cacheStore the cache store.
    * @param mappings the mappings to sync.
    * @param target  the destination directory to sync to.
    * @return the target value
    */
-  def syncMappings(cacheDir: File, cacheName: String, mappings: Seq[PathMapping], target: File): File = {
-    val cache = cacheDir / cacheName
+  def syncMappings(cacheStore: Compat.CacheStore, mappings: Seq[PathMapping], target: File): File = {
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
-    Sync(cache)(copies)
+    Sync(cacheStore)(copies)
     target
   }
 
@@ -593,7 +597,7 @@ object SbtWeb extends AutoPlugin {
   private def unload(state: State): State = {
     state.get(webActorSystemAttrKey).fold(state) {
       as =>
-        as.shutdown()
+        Compat.terminateActorSystem(as)
         state.remove(webActorSystemAttrKey)
     }
   }

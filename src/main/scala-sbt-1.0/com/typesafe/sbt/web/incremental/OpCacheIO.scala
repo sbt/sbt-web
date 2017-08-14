@@ -4,13 +4,17 @@
 package com.typesafe.sbt.web.incremental
 
 import java.io.File
-import sbinary._
+
 import sbinary.Operations._
+import sbinary._
 import sbt.CacheIO
-import scala.collection.immutable.{ Map, Set }
+
+import scala.collection.immutable.{Map, Set}
 
 /**
  * Support for reading and writing cache files.
+ *
+ * TODO: CONVERT TO NEW SBT CACHE API
  */
 private[incremental] object OpCacheIO {
 
@@ -31,7 +35,7 @@ private[incremental] object OpCacheIO {
  */
 private[incremental] object OpCacheProtocol extends DefaultProtocol {
 
-  import OpCache.{ FileHash, Record }
+  import OpCache.{FileHash, Record}
 
   implicit def cacheContentFormat: Format[Map[OpInputHash, Record]] =
     immutableMapFormat[OpInputHash, Record](OpInputHashFormat, RecordFormat)

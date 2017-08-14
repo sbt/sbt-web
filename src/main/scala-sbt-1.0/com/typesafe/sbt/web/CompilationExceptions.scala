@@ -1,10 +1,12 @@
 package com.typesafe.sbt.web
 
 import sbt._
-import xsbti.{Maybe, Position, Severity, Problem}
-import xsbti.CompileFailed
+import xsbti._
+import java.util.Optional
 
 object CompileProblems {
+
+  type LoggerReporter = sbt.internal.inc.LoggedReporter
 
   /**
    * Report compilation problems using the given reporter.
@@ -13,9 +15,9 @@ object CompileProblems {
    * `CompileProblemsException` is thrown. The exception will contain
    * the list of problems.
    */
-  def report[Op,A](reporter: LoggerReporter, problems: Seq[Problem]): Unit = {
+  def report[Op,A](reporter: Reporter, problems: Seq[Problem]): Unit = {
     reporter.reset()
-    problems.foreach(p => reporter.log(p.position(), p.message(), p.severity()))
+    problems.foreach(reporter.log)
     reporter.printSummary()
     if (problems.exists(_.severity() == Severity.Error)) { throw new CompileProblemsException(problems.toArray) }
   }
@@ -46,19 +48,19 @@ class GeneralProblem(val message: String, source: File) extends Problem {
   def severity(): Severity = Severity.Error
 
   def position(): Position = new Position {
-    def line(): Maybe[Integer] = Maybe.nothing()
+    def line(): Optional[Integer] = Optional.empty()
 
     def lineContent(): String = ""
 
-    def offset(): Maybe[Integer] = Maybe.nothing()
+    def offset(): Optional[Integer] = Optional.empty()
 
-    def pointer(): Maybe[Integer] = Maybe.nothing()
+    def pointer(): Optional[Integer] = Optional.empty()
 
-    def pointerSpace(): Maybe[String] = Maybe.nothing()
+    def pointerSpace(): Optional[String] = Optional.empty()
 
-    def sourcePath(): Maybe[String] = Maybe.just(source.getCanonicalPath)
+    def sourcePath(): Optional[String] = Optional.of(source.getCanonicalPath)
 
-    def sourceFile(): Maybe[File] = Maybe.just(source)
+    def sourceFile(): Optional[File] = Optional.of(source)
   }
 }
 
@@ -75,21 +77,21 @@ class LinePosition(
                     characterOffset: Int,
                     source: File
                     ) extends Position {
-  def line(): Maybe[Integer] = Maybe.just(lineNumber)
+  def line(): Optional[Integer] = Optional.of(lineNumber)
 
-  def offset(): Maybe[Integer] = Maybe.just(characterOffset)
+  def offset(): Optional[Integer] = Optional.of(characterOffset)
 
-  def pointer(): Maybe[Integer] = offset()
+  def pointer(): Optional[Integer] = offset()
 
-  def pointerSpace(): Maybe[String] = Maybe.just(
+  def pointerSpace(): Optional[String] = Optional.of(
     lineContent.take(pointer().get).map {
       case '\t' => '\t'
       case x => ' '
     })
 
-  def sourcePath(): Maybe[String] = Maybe.just(source.getPath)
+  def sourcePath(): Optional[String] = Optional.of(source.getPath)
 
-  def sourceFile(): Maybe[File] = Maybe.just(source)
+  def sourceFile(): Optional[File] = Optional.of(source)
 }
 
 /**
