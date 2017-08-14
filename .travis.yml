@@ -1,3 +1,15 @@
 jdk: oraclejdk8
 language: scala
 script: sbt ^test ^scripted
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    
+before_cache:
+  # Delete the cached artifacts
+  - rm -rf $HOME/.ivy2/cache/scala_*/sbt_*/com.typesafe.sbt/sbt-web
+  # Delete all ivydata files
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" | xargs rm
+

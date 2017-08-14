@@ -4,79 +4,89 @@
 package com.typesafe.sbt.web.incremental
 
 import java.io.File
+import java.util.Base64
 
-import sbinary.Operations._
-import sbinary._
-import sbt.CacheIO
+import sbt.util.CacheStore
 
 import scala.collection.immutable.{Map, Set}
 
 /**
  * Support for reading and writing cache files.
- *
- * TODO: CONVERT TO NEW SBT CACHE API
  */
 private[incremental] object OpCacheIO {
 
-  import OpCacheProtocol.OpCacheFormatV2
+  import OpCacheProtocol.opCacheFormat
 
   def toFile(cache: OpCache, file: File): Unit = {
-    CacheIO.toFile(OpCacheFormatV2)(cache)(file)
+    CacheStore(file).write(cache)
   }
 
   def fromFile(file: File): OpCache = {
-    CacheIO.fromFile(OpCacheFormatV2, new OpCache())(file)
+    CacheStore(file).read(new OpCache())
   }
-
 }
 
 /**
  * Binary formats for cache files.
  */
-private[incremental] object OpCacheProtocol extends DefaultProtocol {
+private[incremental] object OpCacheProtocol {
+
+  import sjsonnew._
+  import BasicJsonProtocol._
 
   import OpCache.{FileHash, Record}
 
-  implicit def cacheContentFormat: Format[Map[OpInputHash, Record]] =
-    immutableMapFormat[OpInputHash, Record](OpInputHashFormat, RecordFormat)
+  implicit val fileFormat: JsonFormat[File] = projectFormat[File, String](_.getAbsolutePath, new File(_))
+  implicit val bytesFormat: JsonFormat[Bytes] = projectFormat[Bytes, String](
+    bytes => Base64.getEncoder.encodeToString(bytes.arr),
+    bytes => new Bytes(Base64.getDecoder.decode(bytes))
+  )
+  implicit val opInputHashKeyFormat = JsonKeyFormat[OpInputHash](
+    hash => Base64.getEncoder.encodeToString(hash.bytes.arr),
+    hashBytes => OpInputHash(Bytes(Base64.getDecoder.decode(hashBytes)))
+  )
 
-  implicit def fileDepsFormat: Format[Set[FileHash]] =
-    immutableSetFormat[FileHash](FileHashFormat)
-
-  /**
-   * SBT's CacheIO stores a hash of the format type in the cache. By including a version number in the name, and
-   * incrementing that version number each time the format changes, this ensures that when the version changes,
-   * SBT won't try and load the cache, but will treat it as if there is no cache.
-   */
-  implicit object OpCacheFormatV2 extends Format[OpCache] {
-    def reads(in: Input): OpCache = new OpCache(read[Map[OpInputHash, Record]](in))
-    def writes(out: Output, oc: OpCache) = write[Map[OpInputHash, Record]](out, oc.content)
-  }
-
-  implicit object BytesFormat extends Format[Bytes] {
-    def reads(in: Input): Bytes = Bytes(read[Array[Byte]](in))
-    def writes(out: Output, bytes: Bytes) = write[Array[Byte]](out, bytes.arr)
-  }
-
-  implicit object OpInputHashFormat extends Format[OpInputHash] {
-    def reads(in: Input): OpInputHash = OpInputHash(read[Bytes](in))
-    def writes(out: Output, oih: OpInputHash) = write[Bytes](out, oih.bytes)
-  }
-
-  implicit object RecordFormat extends Format[Record] {
-    def reads(in: Input): Record = Record(read[Set[FileHash]](in), read[Set[File]](in))
-    def writes(out: Output, r: Record) = {
-      write[Set[FileHash]](out, r.fileHashes)
-      write[Set[File]](out, r.products)
+  implicit object FileHashFormat extends JsonFormat[FileHash] {
+    def write[J](hash: FileHash, builder: Builder[J]): Unit = {
+      builder.beginObject()
+      builder.addField("file", hash.file)
+      builder.addField("sha1IfExists", hash.sha1IfExists)
+      builder.endObject()
     }
+    def read[J](jsOpt: Option[J], unbuilder: Unbuilder[J]): FileHash =
+      jsOpt match {
+        case Some(js) =>
+          unbuilder.beginObject(js)
+          val file = unbuilder.readField[File]("file")
+          val sha1IfExists = unbuilder.readField[Option[Bytes]]("sha1IfExists")
+          unbuilder.endObject()
+          FileHash(file, sha1IfExists)
+        case None =>
+          deserializationError("Expected JsObject but found None")
+      }
   }
 
-  implicit object FileHashFormat extends Format[FileHash] {
-    def reads(in: Input): FileHash = FileHash(read[File](in), read[Option[Bytes]](in))
-    def writes(out: Output, fh: FileHash) = {
-      write[File](out, fh.file)
-      write[Option[Bytes]](out, fh.sha1IfExists)
+  implicit object RecordFormat extends JsonFormat[Record] {
+    def write[J](record: Record, builder: Builder[J]): Unit = {
+      builder.beginObject()
+      builder.addField("fileHashes", record.fileHashes)
+      builder.addField("products", record.products)
+      builder.endObject()
     }
+    def read[J](jsOpt: Option[J], unbuilder: Unbuilder[J]): Record =
+      jsOpt match {
+        case Some(js) =>
+          unbuilder.beginObject(js)
+          val fileHashes = unbuilder.readField[Set[FileHash]]("fileHashes")
+          val products = unbuilder.readField[Set[File]]("products")
+          unbuilder.endObject()
+          Record(fileHashes, products)
+        case None =>
+          deserializationError("Expected JsObject but found None")
+      }
   }
 
+  implicit val opCacheFormat: JsonFormat[OpCache] = {
+    projectFormat[OpCache, Map[OpInputHash, Record]](_.content, new OpCache(_))
+  }
 }

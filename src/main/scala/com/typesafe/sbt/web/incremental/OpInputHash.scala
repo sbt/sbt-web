@@ -9,7 +9,7 @@ import sbt.Hash
  * A hash of an operation's input. Used to check if two operations have the
  * same or different inputs.
  */
-case class OpInputHash(val bytes: Bytes)
+case class OpInputHash(bytes: Bytes)
 
 /**
  * Factory methods for OpInputHash.
