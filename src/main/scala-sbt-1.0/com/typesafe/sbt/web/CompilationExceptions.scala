@@ -6,7 +6,7 @@ import java.util.Optional
 
 object CompileProblems {
 
-  type LoggerReporter = sbt.internal.inc.LoggedReporter
+  type LoggerReporter = sbt.internal.inc.ManagedLoggedReporter
 
   /**
    * Report compilation problems using the given reporter.
@@ -92,6 +92,8 @@ class LinePosition(
   def sourcePath(): Optional[String] = Optional.of(source.getPath)
 
   def sourceFile(): Optional[File] = Optional.of(source)
+
+  override def toString = s"$source:$lineNumber:$characterOffset"
 }
 
 /**
