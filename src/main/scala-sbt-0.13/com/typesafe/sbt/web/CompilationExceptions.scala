@@ -91,6 +91,8 @@ class LinePosition(
   def sourcePath(): Maybe[String] = Maybe.just(source.getPath)
 
   def sourceFile(): Maybe[File] = Maybe.just(source)
+
+  override def toString = s"$source:$lineNumber:$characterOffset"
 }
 
 /**
