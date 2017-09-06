@@ -49,7 +49,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-sassify](https://github.com/irundaia/sbt-sassify)
 * [sbt-simple-url-update](https://github.com/neomaclin/sbt-simple-url-update#sbt-simple-url-update)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
-* [sbt-traceur](https://github.com/arielscarpinelli/sbt-traceur)
+* [sbt-traceur](https://github.com/LuigiPeace/sbt-traceur)
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
 * [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
 * [sbt-uglify](https://github.com/sbt/sbt-uglify)
