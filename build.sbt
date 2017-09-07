@@ -7,7 +7,7 @@ libraryDependencies ++= Seq(
     case "2.10" => "2.3.16"
     case _ => "2.5.4"
   }),
-  "org.webjars" % "webjars-locator-core" % "0.32",
+  "org.webjars" % "webjars-locator-core" % "0.33",
   "org.specs2" %% "specs2-core" % "3.8.9" % "test",
   "junit" % "junit" % "4.12" % "test"
 )
