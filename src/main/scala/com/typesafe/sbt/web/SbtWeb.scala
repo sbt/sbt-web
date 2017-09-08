@@ -423,6 +423,9 @@ object SbtWeb extends AutoPlugin {
     val cache = new FileSystemCache(cacheFile)
     val extractor = new WebJarExtractor(cache, classLoader)
     block(extractor, to)
+    import scala.collection.JavaConverters._
+    // Delete any files that were in the cache but weren't found by the extractor
+    cache.getExistingUntouchedFiles(to).asScala.foreach(_.delete())
     cache.save()
     to
   }
