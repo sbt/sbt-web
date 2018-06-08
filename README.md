@@ -54,6 +54,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
 * [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
 * [sbt-uglify](https://github.com/sbt/sbt-uglify)
+* [sbt-vuefy](https://github.com/GIVESocialMovement/sbt-vuefy)
 * [sbt-web-scalajs](https://github.com/vmunier/sbt-web-scalajs)
 
 Ideas for Plugins
