@@ -142,6 +142,8 @@ object SbtWeb extends AutoPlugin {
   import autoImport._
   import WebKeys._
 
+  override def projectConfigurations = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
+
   override def globalSettings: Seq[Setting[_]] = super.globalSettings ++ Seq(
     onLoad in Global := (onLoad in Global).value andThen load,
     onUnload in Global := (onUnload in Global).value andThen unload
