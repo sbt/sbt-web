@@ -8,7 +8,6 @@ def pickVersion(scalaBinaryVersion: String, default: String, forScala210: String
 }
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % pickVersion(scalaBinaryVersion.value, default = "2.6.0", forScala210 = "2.3.16"),
   "org.webjars" % "webjars-locator-core" % "0.43",
   "org.specs2" %% "specs2-core" % pickVersion(scalaBinaryVersion.value, default = "4.8.1", forScala210 = "3.10.0") % "test",
   "junit" % "junit" % "4.12" % "test"

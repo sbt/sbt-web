@@ -2,7 +2,6 @@ package com.typesafe.sbt.web
 
 import sbt._
 import sbt.internal.io.Source
-import akka.actor.ActorSystem
 
 object Compat {
 
@@ -25,8 +24,6 @@ object Compat {
 
   type CacheStore = sbt.util.CacheStore
   def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheStoreFactory.make(identifier)
-
-  def terminateActorSystem(actorSystem: ActorSystem) = actorSystem.terminate()
 
   def sync(store: CacheStore): Traversable[(File, File)] => Relation[File, File] = Sync.sync(store)
 }
