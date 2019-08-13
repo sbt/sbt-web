@@ -1,4 +1,4 @@
-jdk: oraclejdk8
+jdk: openjdk8
 language: scala
 script: sbt ^test ^scripted
 sudo: false
