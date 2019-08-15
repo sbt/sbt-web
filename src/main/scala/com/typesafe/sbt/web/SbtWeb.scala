@@ -5,7 +5,7 @@ import sbt._
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
 import akka.actor.{ActorRefFactory, ActorSystem}
-import org.webjars.{FileSystemCache, WebJarExtractor}
+import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{OpResult, OpSuccess}
@@ -422,13 +422,8 @@ object SbtWeb extends AutoPlugin {
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)
                                  (block: (WebJarExtractor, File) => Unit): File = {
-    val cache = new FileSystemCache(cacheFile)
-    val extractor = new WebJarExtractor(cache, classLoader)
+    val extractor = new WebJarExtractor(classLoader)
     block(extractor, to)
-    import scala.collection.JavaConverters._
-    // Delete any files that were in the cache but weren't found by the extractor
-    cache.getExistingUntouchedFiles(to).asScala.foreach(_.delete())
-    cache.save()
     to
   }
 
