@@ -19,4 +19,6 @@ object Compat {
   def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheDirectory / identifier
 
   def terminateActorSystem(actorSystem: ActorSystem) = actorSystem.shutdown()
+
+  def sync(store: CacheStore): Traversable[(File, File)] => Relation[File, File] = Sync(store)
 }
