@@ -217,7 +217,7 @@ object SbtWeb extends AutoPlugin {
     compile in TestAssets := (compile in TestAssets).dependsOn(compile in Assets).value,
 
     test in TestAssets :=(()),
-    test in TestAssets := (test in TestAssets).dependsOn(compile in TestAssets),
+    test in TestAssets := (test in TestAssets).dependsOn(compile in TestAssets).value,
 
     Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
     Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
@@ -529,7 +529,7 @@ object SbtWeb extends AutoPlugin {
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
-    Sync(cacheStore)(copies)
+    Compat.sync(cacheStore)(copies)
     target
   }
 
