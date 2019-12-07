@@ -1,1 +1,1 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-web-build-base" % "1.2.2")
+addSbtPlugin("com.typesafe.sbt" % "sbt-web-build-base" % "1.2.3")
