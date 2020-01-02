@@ -15,7 +15,8 @@ cache:
     - "$HOME/.coursier/cache"
     - "$HOME/.ivy2/cache"
     - "$HOME/.jabba/jdk"
-    
+    - "$HOME/.coursier/cache"
+
 before_cache:
   # Delete the cached artifacts
   - rm -rf $HOME/.ivy2/cache/scala_*/sbt_*/com.typesafe.sbt/sbt-web

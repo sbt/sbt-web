@@ -1,6 +1,5 @@
 package com.typesafe.sbt.web
 
-import akka.actor.ActorSystem
 import sbt._
 
 object Compat {
@@ -16,9 +15,8 @@ object Compat {
   }
 
   type CacheStore = File
-  def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheDirectory / identifier
 
-  def terminateActorSystem(actorSystem: ActorSystem) = actorSystem.shutdown()
+  def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheDirectory / identifier
 
   def sync(store: CacheStore): Traversable[(File, File)] => Relation[File, File] = Sync(store)
 }

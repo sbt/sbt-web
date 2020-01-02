@@ -1,10 +1,8 @@
 package com.typesafe.sbt.web
 
-import com.typesafe.config.{ConfigException, ConfigFactory}
 import sbt._
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
-import akka.actor.{ActorRefFactory, ActorSystem}
 import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
@@ -143,11 +141,6 @@ object SbtWeb extends AutoPlugin {
   import WebKeys._
 
   override def projectConfigurations = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
-
-  override def globalSettings: Seq[Setting[_]] = super.globalSettings ++ Seq(
-    onLoad in Global := (onLoad in Global).value andThen load,
-    onUnload in Global := (onUnload in Global).value andThen unload
-  )
 
   override def buildSettings: Seq[Def.Setting[_]] = Seq(
     nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
@@ -570,64 +563,4 @@ object SbtWeb extends AutoPlugin {
         }
     }._2
   }
-
-  // Actor system management and API
-
-  private val webActorSystemAttrKey = AttributeKey[ActorSystem]("web-actor-system")
-
-  private def load(state: State): State = {
-    state.get(webActorSystemAttrKey).fold({
-      withActorClassloader {
-        val loadedConfig = try {
-          ConfigFactory.load().getConfig("sbt-web")
-        } catch {
-          case _: ConfigException =>
-            ConfigFactory.empty()
-        }
-        val config = loadedConfig.withFallback(ConfigFactory.parseString( """akka {
-                                                                            |  log-dead-letters = 0
-                                                                            |  log-dead-letters-during-shutdown = off
-                                                                            |}""".stripMargin))
-        val webActorSystem = ActorSystem("sbt-web", config)
-        state.put(webActorSystemAttrKey, webActorSystem)
-      }
-    })(as => state)
-  }
-
-  private def unload(state: State): State = {
-    state.get(webActorSystemAttrKey).fold(state) {
-      as =>
-        Compat.terminateActorSystem(as)
-        state.remove(webActorSystemAttrKey)
-    }
-  }
-
-  /**
-   * Perform actor related activity with sbt-web's actor system.
-   *
-   * @param state The project build state available to the task invoking this.
-   * @param namespace A means by which actors can be namespaced.
-   * @param block The block of code to execute.
-   * @tparam T The expected return type of the block.
-   * @return The return value of the block.
-   */
-  def withActorRefFactory[T](state: State, namespace: String)(block: (ActorRefFactory) => T): T = {
-    // We will get an exception if there is no known actor system - which is a good thing because
-    // there absolutely has to be at this point.
-    block(state.get(webActorSystemAttrKey).get)
-  }
-
-  private def withActorClassloader[A](f: => A): A = {
-    val newLoader = ActorSystem.getClass.getClassLoader
-    val thread = Thread.currentThread
-    val oldLoader = thread.getContextClassLoader
-
-    thread.setContextClassLoader(newLoader)
-    try {
-      f
-    } finally {
-      thread.setContextClassLoader(oldLoader)
-    }
-  }
-
 }
