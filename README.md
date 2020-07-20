@@ -50,6 +50,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-puresass](https://chiselapp.com/user/twenstar/repository/sbt-puresass)
 * [sbt-simple-url-update](https://github.com/neomaclin/sbt-simple-url-update#sbt-simple-url-update)
 * [sbt-stylus](https://github.com/sbt/sbt-stylus)
+* [sbt-terser](https://github.com/andriimartynov/sbt-terser)
 * [sbt-traceur](https://github.com/LuigiPeace/sbt-traceur)
 * [sbt-tslint](https://github.com/joost-de-vries/sbt-tslint)
 * [sbt-typescript](https://github.com/joost-de-vries/sbt-typescript)
