@@ -1,0 +1,36 @@
+name: CI
+on:
+  pull_request:
+  push:
+jobs:
+  build_scala2_12_jdk8:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_OPTS: -Xms2048M -Xmx2048M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v13
+        with:
+          java-version: "adopt@1.8"
+
+      - name: Coursier cache
+        uses: coursier/cache-action@v6
+
+      - name: Build and test
+        shell: bash
+        run: |
+          sbt ^test ^scripted
+
+          # Delete the cached artifacts
+          rm -rf $HOME/.ivy2/cache/scala_*/sbt_*/com.typesafe.sbt/sbt-web
+          rm -rf $HOME/.coursier/cache/v*/http*/repo.scala-sbt.org/scalasbt/sbt-plugin-releases/com.typesafe.sbt/sbt-web
+
+          # Delete all ivydata files
+          rm -rf "$HOME/.ivy2/local" || true
+          find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true
+          find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
+          find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
+          find $HOME/.sbt                              -name "ivydata-*.properties" -delete || true
