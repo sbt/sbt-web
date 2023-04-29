@@ -1,7 +1,7 @@
 sbt-web
 =======
 
-[![Build Status](https://api.travis-ci.org/sbt/sbt-web.png?branch=master)](https://travis-ci.org/sbt/sbt-web) [![Download](https://api.bintray.com/packages/sbt-web/sbt-plugin-releases/sbt-web/images/download.svg)](https://bintray.com/sbt-web/sbt-plugin-releases/sbt-web/_latestVersion)
+[![Build Status](https://api.travis-ci.org/sbt/sbt-web.png?branch=master)](https://travis-ci.org/sbt/sbt-web) [![scaladex](https://index.scala-lang.org/sbt/sbt-web/sbt-web/latest.svg)](https://index.scala-lang.org/sbt/sbt-web/sbt-web)
 
 This project provides the building blocks for web oriented sbt plugins by bringing together the following concerns:
 
