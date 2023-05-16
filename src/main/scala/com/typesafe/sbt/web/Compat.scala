@@ -19,7 +19,4 @@ object Compat {
       }
     }
   }
-
-  type CacheStore = sbt.util.CacheStore
-  def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheStoreFactory.make(identifier)
 }

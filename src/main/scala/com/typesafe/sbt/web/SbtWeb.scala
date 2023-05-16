@@ -227,7 +227,7 @@ object SbtWeb extends AutoPlugin {
 
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
-      Compat.cacheStore(streams.value, "sync-stage"),
+      streams.value.cacheStoreFactory.make("sync-stage"),
       pipeline.value,
       stagingDirectory.value
     )
@@ -283,7 +283,7 @@ object SbtWeb extends AutoPlugin {
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value),
 
-    assets := syncMappings(Compat.cacheStore(streams.value, s"sync-assets-" + configuration.value.name),
+    assets := syncMappings(streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
       mappings.value, public.value),
 
     exportedMappings := createWebJarMappings.value,
@@ -319,7 +319,7 @@ object SbtWeb extends AutoPlugin {
     }
     if (syncRequired) Def.task {
       state.value.log.debug(s"Exporting ${configuration.value}:${moduleName.value}")
-      syncMappings(Compat.cacheStore(streams.value, "sync-exported-assets-" + configuration.value.name),
+      syncMappings(streams.value.cacheStoreFactory.make("sync-exported-assets-" + configuration.value.name),
         exportedMappings.value, syncTargetDir)
     } else
       Def.task(syncTargetDir)
@@ -519,7 +519,7 @@ object SbtWeb extends AutoPlugin {
    * @param target  the destination directory to sync to.
    * @return the target value
    */
-  def syncMappings(cacheStore: Compat.CacheStore, mappings: Seq[PathMapping], target: File): File = {
+  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File): File = {
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
