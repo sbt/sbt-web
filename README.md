@@ -72,16 +72,16 @@ The following directory layout is declared by sbt-web with an indication of the 
 
     + src
     --+ main
-    ----+ assets .....(sourceDirectory in Assets)
+    ----+ assets .....(Assets / sourceDirectory)
     ------+ js
-    ----+ public .....(resourceDirectory in Assets)
+    ----+ public .....(Assets / resourceDirectory)
     ------+ css
     ------+ images
     ------+ js
     --+ test
-    ----+ assets .....(sourceDirectory in TestAssets)
+    ----+ assets .....(TestAssets / sourceDirectory)
     ------+ js
-    ----+ public .....(resourceDirectory in TestAssets)
+    ----+ public .....(TestAssets / resourceDirectory)
     ------+ css
     ------+ images
     ------+ js
@@ -89,11 +89,11 @@ The following directory layout is declared by sbt-web with an indication of the 
     + target
     --+ web ............(webTarget)
     ----+ public
-    ------+ main .......(resourceManaged in Assets)
+    ------+ main .......(Assets / resourceManaged)
     --------+ css
     --------+ images
     --------+ js
-    ------+ test .......(resourceManaged in TestAssets)
+    ------+ test .......(TestAssets / resourceManaged)
     --------+ css
     --------+ images
     --------+ js
@@ -106,15 +106,15 @@ project resources are generally not made public by a web server.
 
 In sbt, asset source files are considered the source for plugins that process them. When they are processed any resultant
 files go into a `public` directory in the classpath.  By configuration, sbt-web apps serve static assets from the `public`
-directory on the classpath. For example a CoffeeScript plugin would use files from `sourceDirectory in Assets`
-and produce them to `resourceManaged in Assets`.
+directory on the classpath. For example a CoffeeScript plugin would use files from `Assets / sourceDirectory`
+and produce them to `Assets / resourceManaged`.
 
 All assets whether they need processing or are static in nature, will be copied to the resourceManaged destinations.
 
 Assets can be organized however desired within the `assets` directory.
 
 One last thing regarding the public and public-test folders... any WebJar depended on by the project will be automatically
-extracted into these folders e.g. target/web/public/main/lib/jquery/jquery.js. In addition the public-test folder receives
+extracted into these folders e.g. target/web/public/main/lib/jquery/jquery.js. In addition, the public-test folder receives
 the contents of the public folder as well as test assets. This eases the support of test frameworks given that
 all files are locatable from one root.
 
@@ -183,7 +183,7 @@ Assets from project B are available to project A under `lib/b/`.
 
 The module name for imported assets is the same as the project module name (the
 normalized name of the project). This can be changed with the
-`moduleName in Assets` setting.
+`Assets / moduleName` setting.
 
 Test assets are also exported if a test dependency is specified. For example:
 
@@ -204,20 +204,20 @@ the project and use as a library dependency. The assets will be extracted and
 available under `lib/module/` in the same way as other webjar dependencies or
 internal dependencies.
 
-To package all assets for production there is a `packageBin in Assets` task,
+To package all assets for production there is a `Assets / packageBin` task,
 `web-assets:package` in the sbt shell. This packages the result of the asset
 pipeline. An optional path prefix can be specified with the `packagePrefix in
 Assets` setting. For example, to have assets packaged under a `public`
 directory, as used for Play Framework distributions:
 
 ```scala
-WebKeys.packagePrefix in Assets := "public/"
+Assets / WebKeys.packagePrefix := "public/"
 ```
 
 To automatically add the production-ready assets to classpath, the following might be useful:
 
 ```scala
-(managedClasspath in Runtime) += (packageBin in Assets).value
+(Runtime / managedClasspath) += (Assets / packageBin).value
 ```
 
 Writing a Source File task
@@ -232,10 +232,10 @@ val mySourceFileTask = taskKey[Seq[File]]("Some source file task")
 
 mySourceFileTask := Nil
 
-sourceGenerators in Assets += mySourceFileTask.taskValue
+Assets / sourceGenerators += mySourceFileTask.taskValue
 ```
 
-The addition of the `mySourceFileTask` to `sourceGenerators in Assets` declares the task as a resource generator and,
+The addition of the `mySourceFileTask` to `Assets / sourceGenerators` declares the task as a resource generator and,
 as such, will be executed in parallel with other resource generators during the `WebKeys.assets` task execution.
 Using sbt's `show` command will yield the directory where all source file assets have been written to e.g.:
 
@@ -243,7 +243,7 @@ Using sbt's `show` command will yield the directory where all source file assets
 show web-assets:assets
 ```
 
-Source file tasks take input, typically from `sourceDirectory in Assets` (and/or `TestAssets`) and produce a sequence
+Source file tasks take input, typically from `Assets / sourceDirectory` (and/or `TestAssets`) and produce a sequence
 of files that have been generated from that input.
 
 The following code illustrates a more complete example where input files matching *.coffee are taken and copied to an 
@@ -252,12 +252,12 @@ output folder:
 ```scala
 mySourceFileTask := {
   // translate .coffee files into .js files
-  val sourceDir = (sourceDirectory in Assets).value
+  val sourceDir = (Assets / sourceDirectory).value
   val targetDir = webTarget.value / "cs-plugin"
   val sources = sourceDir ** "*.coffee"
   val mappings = sources pair relativeTo(sourceDir)
   val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
-  val copies = renamed map { case (file, path) => file -> (resourceManaged in Assets).value / path }
+  val copies = renamed map { case (file, path) => file -> (Assets / resourceManaged).value / path }
   IO.copy(copies)
   copies map (_._2)
 }
@@ -274,7 +274,7 @@ given the `Assets` scope:
 ```scala
 mySourceFileTask := Def.task {
   Nil
-}.dependsOn(WebKeys.nodeModules in Assets).value
+}.dependsOn(Assets / WebKeys.nodeModules).value
 ```
 
 If you're wrapping the task within a plugin then you will need the Plugin's scope as opposed to the `Assets`
@@ -283,7 +283,7 @@ scope i.e.:
 ```scala
 mySourceFileTask := Def.task {
   Nil
-}.dependsOn(WebKeys.nodeModules in Plugin).value
+}.dependsOn(Plugin / WebKeys.nodeModules).value
 ```
 
 Writing an Asset Pipeline task
@@ -316,7 +316,7 @@ executed source file tasks as its input.
 If you have some need for the assets produced by the `pipelineStages` in your development environment (during `play run`), then you can scope the `pipelineStages` to the `Assets` config.
 
 ```scala
-pipelineStages in Assets := Seq(myPipelineTask)
+Assets / pipelineStages := Seq(myPipelineTask)
 ```
 
 To perform the asset pipeline tasks use the `WebKeys.stage` task. If you use sbt's `show` command from the console then you will see the directory that the pipeline has been written to e.g.:
