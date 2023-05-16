@@ -1,6 +1,8 @@
 package com.typesafe.sbt.web
 
 import sbt._
+import sbt.internal.inc.Analysis
+import sbt.internal.io.Source
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
 import org.webjars.WebJarExtractor
@@ -205,17 +207,17 @@ object SbtWeb extends AutoPlugin {
     (Test / exportedProductsIfMissing)  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
     (Compile / exportedProductsNoTracking) ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
     (Test / exportedProductsNoTracking) ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
-    (Assets / compile) := Compat.Analysis.Empty,
-    (TestAssets / compile) := Compat.Analysis.Empty,
+    (Assets / compile) := Analysis.Empty,
+    (TestAssets / compile) := Analysis.Empty,
     (TestAssets / compile) := ((TestAssets / compile)).dependsOn((Assets / compile)).value,
 
     (TestAssets / test) :=(()),
     (TestAssets / test) := ((TestAssets / test)).dependsOn((TestAssets / compile)).value,
 
-    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
-    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
-    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
-    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
+    addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
+    addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
+    addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
+    addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
 
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
@@ -226,7 +228,7 @@ object SbtWeb extends AutoPlugin {
 
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
-      Compat.cacheStore(streams.value, "sync-stage"),
+      streams.value.cacheStoreFactory.make("sync-stage"),
       pipeline.value,
       stagingDirectory.value
     )
@@ -282,7 +284,7 @@ object SbtWeb extends AutoPlugin {
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value),
 
-    assets := syncMappings(Compat.cacheStore(streams.value, s"sync-assets-" + configuration.value.name),
+    assets := syncMappings(streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
       mappings.value, public.value),
 
     exportedMappings := createWebJarMappings.value,
@@ -304,6 +306,21 @@ object SbtWeb extends AutoPlugin {
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
 
+  private def addWatchSources(
+    unmanagedSourcesKey: TaskKey[Seq[File]],
+    unmanagedSourceDirectoriesKey: SettingKey[Seq[File]],
+    scopeKey: Configuration
+  ) = {
+    Keys.watchSources ++= {
+      val include = (scopeKey / unmanagedSourcesKey / Keys.includeFilter).value
+      val exclude = (scopeKey / unmanagedSourcesKey / Keys.excludeFilter).value
+
+      (scopeKey / unmanagedSourceDirectoriesKey).value.map { directory =>
+        new Source(directory, include, exclude)
+      }
+    }
+  }
+
   def webJarsPathPrefix: Def.Initialize[Task[String]] = Def.task {
     path(s"$WEBJARS_PATH_PREFIX/${moduleName.value}/${version.value}/")
   }
@@ -318,7 +335,7 @@ object SbtWeb extends AutoPlugin {
     }
     if (syncRequired) Def.task {
       state.value.log.debug(s"Exporting ${configuration.value}:${moduleName.value}")
-      syncMappings(Compat.cacheStore(streams.value, "sync-exported-assets-" + configuration.value.name),
+      syncMappings(streams.value.cacheStoreFactory.make("sync-exported-assets-" + configuration.value.name),
         exportedMappings.value, syncTargetDir)
     } else
       Def.task(syncTargetDir)
@@ -518,11 +535,11 @@ object SbtWeb extends AutoPlugin {
    * @param target  the destination directory to sync to.
    * @return the target value
    */
-  def syncMappings(cacheStore: Compat.CacheStore, mappings: Seq[PathMapping], target: File): File = {
+  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File): File = {
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
-    Compat.sync(cacheStore)(copies)
+    Sync.sync(cacheStore)(copies)
     target
   }
 
