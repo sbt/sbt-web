@@ -15,4 +15,4 @@ project/plugins/project/
 # Idea
 .idea/
 .idea_modules/
-
+.bsp/

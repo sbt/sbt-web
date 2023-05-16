@@ -13,10 +13,10 @@ object Compat {
     scopeKey: Configuration
   ) = {
     Keys.watchSources ++= {
-      val include = (Keys.includeFilter in unmanagedSourcesKey in scopeKey).value
-      val exclude = (Keys.excludeFilter in unmanagedSourcesKey in scopeKey).value
+      val include = (scopeKey / unmanagedSourcesKey / Keys.includeFilter).value
+      val exclude = (scopeKey / unmanagedSourcesKey / Keys.excludeFilter).value
 
-      (unmanagedSourceDirectoriesKey in scopeKey).value.map { directory =>
+      (scopeKey / unmanagedSourceDirectoriesKey).value.map { directory =>
         new Source(directory, include, exclude)
       }
     }
