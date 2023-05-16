@@ -7,12 +7,11 @@ This project provides the building blocks for web oriented sbt plugins by bringi
 
 * File directory layout conventions for resources intended to be served by a web server (otherwise known as assets)
 * Incremental execution of fine-grained operations within sbt tasks
-* Utilities for managing [Akka](http://akka.io/) from within sbt (sbt-web based plugins use Akka)
 * Utilities for managing [WebJars](http://www.webjars.org/) including the ability to extract a WebJar's contents on to disk
 * Standardised reporting of compilation style errors
 
 sbt-web was driven from the desire to factor out client-side web concerns from the [Play Framework](http://www.playframework.com/).
-However sbt-web is entirely independent of Play and can be used for any project that uses sbt as its build system.
+However, sbt-web is entirely independent of Play and can be used for any project that uses sbt as its build system.
 
 For an overview of sbt-web: http://www.ustream.tv/recorded/42774873
 
@@ -142,7 +141,7 @@ To analyse which work needs to be done, a task's work is broken up
 into a number of sub-operations, each of which can be run
 independently. Each operation takes input parameters and can read and
 write files. The incremental task API keeps a record of which
-operations have been run so that that those operations don't need to
+operations have been run so that those operations don't need to
 be repeated in the future.
 
 Asset Pipeline

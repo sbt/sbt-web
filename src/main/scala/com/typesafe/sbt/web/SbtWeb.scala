@@ -143,12 +143,12 @@ object SbtWeb extends AutoPlugin {
   override def projectConfigurations = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
 
   override def buildSettings: Seq[Def.Setting[_]] = Seq(
-    nodeModuleDirectory in Plugin := (target in Plugin).value / "node-modules",
-    webJarsCache in nodeModules in Plugin := (target in Plugin).value / "webjars-plugin.cache",
-    webJarsClassLoader in Plugin := SbtWeb.getClass.getClassLoader,
-    baseDirectory in Plugin := (baseDirectory in LocalRootProject).value / "project",
-    target in Plugin := (baseDirectory in Plugin).value / "target",
-    crossTarget in Plugin := Defaults.makeCrossTarget((target in Plugin).value, scalaBinaryVersion.value, sbtBinaryVersion.value, plugin = true, crossPaths.value)
+    (Plugin / nodeModuleDirectory) := ((Plugin / target)).value / "node-modules",
+    (Plugin / nodeModules / webJarsCache) := (Plugin / target).value / "webjars-plugin.cache",
+    (Plugin / webJarsClassLoader) := SbtWeb.getClass.getClassLoader,
+    (Plugin / baseDirectory) := ((LocalRootProject / baseDirectory)).value / "project",
+    (Plugin / target) := ((Plugin / baseDirectory)).value / "target",
+    (Plugin / crossTarget) := Defaults.makeCrossTarget((Plugin / target).value, scalaVersion.value, scalaBinaryVersion.value, sbtBinaryVersion.value, plugin = true, crossPaths.value),
   ) ++ inConfig(Plugin)(nodeModulesSettings)
 
   override def projectSettings: Seq[Setting[_]] = Seq(
@@ -156,61 +156,61 @@ object SbtWeb extends AutoPlugin {
 
     webTarget := target.value / "web",
 
-    sourceDirectory in Assets := (sourceDirectory in Compile).value / "assets",
-    sourceDirectory in TestAssets := (sourceDirectory in Test).value / "assets",
-    sourceManaged in Assets := webTarget.value / "assets-managed" / "main",
-    sourceManaged in TestAssets := webTarget.value / "assets-managed" / "test",
+    (Assets / sourceDirectory) := ((Compile / sourceDirectory)).value / "assets",
+    (TestAssets / sourceDirectory) := ((Test / sourceDirectory)).value / "assets",
+    (Assets / sourceManaged) := webTarget.value / "assets-managed" / "main",
+    (TestAssets / sourceManaged) := webTarget.value / "assets-managed" / "test",
 
-    jsFilter in Assets := GlobFilter("*.js"),
-    jsFilter in TestAssets := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
+    (Assets / jsFilter) := GlobFilter("*.js"),
+    (TestAssets / jsFilter) := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
 
-    resourceDirectory in Assets := (sourceDirectory in Compile).value / "public",
-    resourceDirectory in TestAssets := (sourceDirectory in Test).value / "public",
-    resourceManaged in Assets := webTarget.value / "resources-managed" / "main",
-    resourceManaged in TestAssets := webTarget.value / "resources-managed" / "test",
+    (Assets / resourceDirectory) := ((Compile / sourceDirectory)).value / "public",
+    (TestAssets / resourceDirectory) := ((Test / sourceDirectory)).value / "public",
+    (Assets / resourceManaged) := webTarget.value / "resources-managed" / "main",
+    (TestAssets / resourceManaged) := webTarget.value / "resources-managed" / "test",
 
-    public in Assets := webTarget.value / "public" / "main",
-    public in TestAssets := webTarget.value / "public" / "test",
+    (Assets / public) := webTarget.value / "public" / "main",
+    (TestAssets / public) := webTarget.value / "public" / "test",
 
-    classDirectory in Assets := webTarget.value / "classes" / "main",
-    classDirectory in TestAssets := webTarget.value / "classes" / "test",
+    (Assets / classDirectory) := webTarget.value / "classes" / "main",
+    (TestAssets / classDirectory) := webTarget.value / "classes" / "test",
 
-    nodeModuleDirectory in Assets := webTarget.value / "node-modules" / "main",
-    nodeModuleDirectory in TestAssets := webTarget.value / "node-modules" / "test",
+    (Assets / nodeModuleDirectory) := webTarget.value / "node-modules" / "main",
+    (TestAssets / nodeModuleDirectory) := webTarget.value / "node-modules" / "test",
 
-    webModuleDirectory in Assets := webTarget.value / "web-modules" / "main",
-    webModuleDirectory in TestAssets := webTarget.value / "web-modules" / "test",
+    (Assets / webModuleDirectory) := webTarget.value / "web-modules" / "main",
+    (TestAssets / webModuleDirectory) := webTarget.value / "web-modules" / "test",
     webModulesLib := "lib",
 
-    internalWebModules in Assets := getInternalWebModules(Compile).value,
-    internalWebModules in TestAssets := getInternalWebModules(Test).value,
+    (Assets / internalWebModules) := getInternalWebModules(Compile).value,
+    (TestAssets / internalWebModules) := getInternalWebModules(Test).value,
     importDirectly := false,
-    directWebModules in Assets := Nil,
-    directWebModules in TestAssets := Seq((moduleName in Assets).value),
+    (Assets / directWebModules) := Nil,
+    (TestAssets / directWebModules) := Seq((Assets / moduleName).value),
 
-    webJarsCache in webJars in Assets := webTarget.value / "web-modules" / "webjars-main.cache",
-    webJarsCache in webJars in TestAssets := webTarget.value / "web-modules" / "webjars-test.cache",
-    webJarsCache in nodeModules in Assets := webTarget.value / "node-modules" / "webjars-main.cache",
-    webJarsCache in nodeModules in TestAssets := webTarget.value / "node-modules" / "webjars-test.cache",
-    webJarsClassLoader in Assets := classLoader((dependencyClasspath in Compile).value),
-    webJarsClassLoader in TestAssets := classLoader((dependencyClasspath in Test).value),
+    (Assets / webJars / webJarsCache) := webTarget.value / "web-modules" / "webjars-main.cache",
+    (TestAssets / webJars / webJarsCache) := webTarget.value / "web-modules" / "webjars-test.cache",
+    (Assets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-main.cache",
+    (TestAssets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-test.cache",
+    (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value),
+    (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value),
 
-    assets := (assets in Assets).value,
+    assets := ((Assets / assets)).value,
 
-    mappings in (Compile, packageBin) ++= (exportedMappings in Assets).value,
-    mappings in (Test, packageBin) ++= (exportedMappings in TestAssets).value,
-    exportedProducts in Compile ++= exportAssets(Assets, Compile, TrackLevel.TrackAlways).value,
-    exportedProducts in Test ++= exportAssets(TestAssets, Test, TrackLevel.TrackAlways).value,
-    exportedProductsIfMissing in Compile ++= exportAssets(Assets, Compile, TrackLevel.TrackIfMissing).value,
-    exportedProductsIfMissing in Test  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
-    exportedProductsNoTracking in Compile ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
-    exportedProductsNoTracking in Test ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
-    compile in Assets := Compat.Analysis.Empty,
-    compile in TestAssets := Compat.Analysis.Empty,
-    compile in TestAssets := (compile in TestAssets).dependsOn(compile in Assets).value,
+    (Compile / packageBin / mappings) ++= ((Assets / exportedMappings)).value,
+    (Test / packageBin / mappings) ++= ((TestAssets / exportedMappings)).value,
+    (Compile / exportedProducts) ++= exportAssets(Assets, Compile, TrackLevel.TrackAlways).value,
+    (Test / exportedProducts) ++= exportAssets(TestAssets, Test, TrackLevel.TrackAlways).value,
+    (Compile / exportedProductsIfMissing) ++= exportAssets(Assets, Compile, TrackLevel.TrackIfMissing).value,
+    (Test / exportedProductsIfMissing)  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
+    (Compile / exportedProductsNoTracking) ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
+    (Test / exportedProductsNoTracking) ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
+    (Assets / compile) := Compat.Analysis.Empty,
+    (TestAssets / compile) := Compat.Analysis.Empty,
+    (TestAssets / compile) := ((TestAssets / compile)).dependsOn((Assets / compile)).value,
 
-    test in TestAssets :=(()),
-    test in TestAssets := (test in TestAssets).dependsOn(compile in TestAssets).value,
+    (TestAssets / test) :=(()),
+    (TestAssets / test) := ((TestAssets / test)).dependsOn((TestAssets / compile)).value,
 
     Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
     Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
@@ -219,7 +219,7 @@ object SbtWeb extends AutoPlugin {
 
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
-    pipeline := allPipelineStages.value((mappings in Assets).value),
+    pipeline := allPipelineStages.value((Assets / mappings).value),
 
     deduplicators := Nil,
     pipeline := deduplicateMappings(pipeline.value, deduplicators.value),
@@ -246,7 +246,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSources := unmanagedSourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
-    mappings in sources := relativeMappings(sources, sourceDirectories).value,
+    (sources / mappings) := relativeMappings(sources, sourceDirectories).value,
 
     resourceGenerators := Nil,
     managedResourceDirectories := Nil,
@@ -255,13 +255,13 @@ object SbtWeb extends AutoPlugin {
     unmanagedResources := unmanagedResourceDirectories.value.descendantsExcept(includeFilter.value, excludeFilter.value).get,
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
-    mappings in resources := relativeMappings(resources, resourceDirectories).value,
+    (resources / mappings) := relativeMappings(resources, resourceDirectories).value,
 
     webModuleGenerators := Nil,
     webModuleDirectories := Nil,
     webModules := webModuleGenerators(_.join).map(_.flatten).value,
-    mappings in webModules := relativeMappings(webModules, webModuleDirectories).value,
-    mappings in webModules := flattenDirectWebModules.value,
+    (webModules / mappings) := relativeMappings(webModules, webModuleDirectories).value,
+    (webModules / mappings) := flattenDirectWebModules.value,
 
     directWebModules ++= {
       val modules = internalWebModules.value
@@ -269,11 +269,11 @@ object SbtWeb extends AutoPlugin {
     },
 
     webJarsDirectory := webModuleDirectory.value / "webjars",
-    webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJarsCache in webJars).value, webJarsClassLoader.value),
+    webJars := generateWebJars(webJarsDirectory.value, webModulesLib.value, (webJars / webJarsCache).value, webJarsClassLoader.value),
     webModuleGenerators += webJars.taskValue,
     webModuleDirectories += webJarsDirectory.value,
 
-    mappings := (mappings in sources).value ++ (mappings in resources).value ++ (mappings in webModules).value,
+    mappings := ((sources / mappings)).value ++ ((resources / mappings)).value ++ ((webModules / mappings)).value,
 
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
@@ -296,7 +296,7 @@ object SbtWeb extends AutoPlugin {
 
   val nodeModulesSettings = Seq(
     webJarsNodeModulesDirectory := nodeModuleDirectory.value / "webjars",
-    webJarsNodeModules := generateNodeWebJars(webJarsNodeModulesDirectory.value, (webJarsCache in nodeModules).value, webJarsClassLoader.value),
+    webJarsNodeModules := generateNodeWebJars(webJarsNodeModulesDirectory.value, (nodeModules / webJarsCache).value, webJarsClassLoader.value),
 
     nodeModuleGenerators := Nil,
     nodeModuleGenerators += webJarsNodeModules.taskValue,
@@ -337,16 +337,16 @@ object SbtWeb extends AutoPlugin {
   }
 
   def exportAssets(assetConf: Configuration, exportConf: Configuration, track: TrackLevel): Def.Initialize[Task[Classpath]] = Def.taskDyn {
-    if ((exportJars in exportConf).value) Def.task {
+    if ((exportConf / exportJars).value) Def.task {
       Seq.empty
     } else {
       track match {
         case TrackLevel.TrackAlways =>
-          exportedProducts in assetConf
+          (assetConf / exportedProducts)
         case TrackLevel.TrackIfMissing =>
-          exportedProductsIfMissing in assetConf
+          (assetConf / exportedProductsIfMissing)
         case TrackLevel.NoTracking =>
-          exportedProductsNoTracking in assetConf
+          (assetConf / exportedProductsNoTracking)
       }
     }
   }
@@ -363,7 +363,7 @@ object SbtWeb extends AutoPlugin {
    */
   def packageAssetsMappings = Def.task {
     val prefix = packagePrefix.value
-    (pipeline in Defaults.ConfigGlobal).value map {
+    (Defaults.ConfigGlobal / pipeline).value map {
       case (file, path) => file -> (prefix + path)
     }
   }
@@ -372,7 +372,7 @@ object SbtWeb extends AutoPlugin {
    * Get module names for all internal web module dependencies on the classpath.
    */
   def getInternalWebModules(conf: Configuration) = Def.task {
-    (internalDependencyClasspath in conf).value.flatMap(_.get(WebKeys.webModulesLib.key))
+    (conf / internalDependencyClasspath).value.flatMap(_.get(WebKeys.webModulesLib.key))
   }
 
   /**
@@ -385,7 +385,7 @@ object SbtWeb extends AutoPlugin {
 
   def flattenDirectWebModules = Def.task {
     val directModules = directWebModules.value
-    val moduleMappings = (mappings in webModules).value
+    val moduleMappings = (webModules / mappings).value
     val lib = webModulesLib.value
     if (directModules.nonEmpty) {
       val prefixes = directModules map {

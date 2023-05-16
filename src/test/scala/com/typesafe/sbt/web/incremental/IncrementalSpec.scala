@@ -8,7 +8,7 @@ class IncrementalSpec extends Specification {
 
   sequential
 
-  "the runIncremental method" should {
+  "the syncIncremental method" should {
 
     "always perform an op when there's no cache file" in {
       IO.withTemporaryDirectory { tmpDir =>
