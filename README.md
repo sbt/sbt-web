@@ -1,7 +1,7 @@
 sbt-web
 =======
 
-[![Build Status](https://api.travis-ci.org/sbt/sbt-web.png?branch=master)](https://travis-ci.org/sbt/sbt-web) [![Download](https://api.bintray.com/packages/sbt-web/sbt-plugin-releases/sbt-web/images/download.svg)](https://bintray.com/sbt-web/sbt-plugin-releases/sbt-web/_latestVersion)
+[![Build Status](https://github.com/sbt/sbt-web/actions/workflows/build-test.yml/badge.svg)](https://github.com/sbt/sbt-web/actions/workflows/build-test.yml)
 
 This project provides the building blocks for web oriented sbt plugins by bringing together the following concerns:
 
@@ -13,8 +13,6 @@ This project provides the building blocks for web oriented sbt plugins by bringi
 sbt-web was driven from the desire to factor out client-side web concerns from the [Play Framework](http://www.playframework.com/).
 However, sbt-web is entirely independent of Play and can be used for any project that uses sbt as its build system.
 
-For an overview of sbt-web: http://www.ustream.tv/recorded/42774873
-
 Available Plugins
 -----------------
 
@@ -24,7 +22,7 @@ The following is a list of plugins we know of that are built on sbt-web:
 * [sbt-closure](https://github.com/ground5hark/sbt-closure#sbt-closure)
 * [sbt-coffeescript](https://github.com/sbt/sbt-coffeescript#sbt-coffeescript)
 * [sbt-coffeescript-reactjs](https://github.com/ShaggyYeti/sbt-coffeescript-reactjs)
-* [sbt-concat](https://github.com/ground5hark/sbt-concat#sbt-concat)
+* [sbt-concat](https://github.com/sbt/sbt-concat#sbt-concat)
 * [sbt-css-compress](https://github.com/ground5hark/sbt-css-compress#sbt-css-compress)
 * [sbt-digest](https://github.com/sbt/sbt-digest#sbt-digest)
 * [sbt-dustjs-linkedin](https://github.com/jmparsons/sbt-dustjs-linkedin)
@@ -353,3 +351,9 @@ The [WebDriver](https://github.com/typesafehub/webdriver) and
 [js-engine](https://github.com/typesafehub/js-engine) projects build on sbt-web and provide a DOM
 oriented and DOM-less means of JavaScript execution respectively. sbt-web plugins will use one of the two of these
 plugins depending on their DOM requirements.
+
+# Releasing sbt-web
+
+1. Tag the release: `git tag -s 1.2.3`
+1. Push tag: `git push upstream 1.2.3`
+1. GitHub action workflow does the rest: https://github.com/sbt/sbt-web/actions/workflows/publish.yml
