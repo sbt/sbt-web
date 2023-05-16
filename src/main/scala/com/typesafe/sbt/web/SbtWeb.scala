@@ -1,6 +1,7 @@
 package com.typesafe.sbt.web
 
 import sbt._
+import sbt.internal.inc.Analysis
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
 import org.webjars.WebJarExtractor
@@ -205,8 +206,8 @@ object SbtWeb extends AutoPlugin {
     (Test / exportedProductsIfMissing)  ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
     (Compile / exportedProductsNoTracking) ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
     (Test / exportedProductsNoTracking) ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
-    (Assets / compile) := Compat.Analysis.Empty,
-    (TestAssets / compile) := Compat.Analysis.Empty,
+    (Assets / compile) := Analysis.Empty,
+    (TestAssets / compile) := Analysis.Empty,
     (TestAssets / compile) := ((TestAssets / compile)).dependsOn((Assets / compile)).value,
 
     (TestAssets / test) :=(()),
@@ -522,7 +523,7 @@ object SbtWeb extends AutoPlugin {
     val copies = mappings map {
       case (file, path) => file -> (target / path)
     }
-    Compat.sync(cacheStore)(copies)
+    Sync.sync(cacheStore)(copies)
     target
   }
 

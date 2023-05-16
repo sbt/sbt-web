@@ -5,8 +5,6 @@ import sbt.internal.io.Source
 
 object Compat {
 
-  val Analysis = sbt.internal.inc.Analysis
-
   def addWatchSources(
     unmanagedSourcesKey: TaskKey[Seq[File]],
     unmanagedSourceDirectoriesKey: SettingKey[Seq[File]],
@@ -24,6 +22,4 @@ object Compat {
 
   type CacheStore = sbt.util.CacheStore
   def cacheStore(stream: Keys.TaskStreams, identifier: String): CacheStore = stream.cacheStoreFactory.make(identifier)
-
-  def sync(store: CacheStore): Traversable[(File, File)] => Relation[File, File] = Sync.sync(store)
 }
