@@ -2,6 +2,7 @@ package com.typesafe.sbt.web
 
 import sbt._
 import sbt.internal.inc.Analysis
+import sbt.internal.io.Source
 import sbt.Keys._
 import sbt.Defaults.relativeMappings
 import org.webjars.WebJarExtractor
@@ -213,10 +214,10 @@ object SbtWeb extends AutoPlugin {
     (TestAssets / test) :=(()),
     (TestAssets / test) := ((TestAssets / test)).dependsOn((TestAssets / compile)).value,
 
-    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
-    Compat.addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
-    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
-    Compat.addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
+    addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
+    addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
+    addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
+    addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
 
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
@@ -304,6 +305,21 @@ object SbtWeb extends AutoPlugin {
     nodeModuleDirectories := Seq(webJarsNodeModulesDirectory.value),
     nodeModules := nodeModuleGenerators(_.join).map(_.flatten).value
   )
+
+  private def addWatchSources(
+    unmanagedSourcesKey: TaskKey[Seq[File]],
+    unmanagedSourceDirectoriesKey: SettingKey[Seq[File]],
+    scopeKey: Configuration
+  ) = {
+    Keys.watchSources ++= {
+      val include = (scopeKey / unmanagedSourcesKey / Keys.includeFilter).value
+      val exclude = (scopeKey / unmanagedSourcesKey / Keys.excludeFilter).value
+
+      (scopeKey / unmanagedSourceDirectoriesKey).value.map { directory =>
+        new Source(directory, include, exclude)
+      }
+    }
+  }
 
   def webJarsPathPrefix: Def.Initialize[Task[String]] = Def.task {
     path(s"$WEBJARS_PATH_PREFIX/${moduleName.value}/${version.value}/")
