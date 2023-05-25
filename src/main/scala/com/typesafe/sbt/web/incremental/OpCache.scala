@@ -76,7 +76,7 @@ private[incremental] object OpCache {
    * Remove all operations from the cache that aren't in the given set of operations.
    */
   def vacuumExcept[Op](cache: OpCache, opsToKeep: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Unit = {
-    val oihSet: Set[OpInputHash] = opsToKeep.map(opInputHasher.hash).to[Set]
+    val oihSet: Set[OpInputHash] = opsToKeep.map(opInputHasher.hash).to(Set)
     for (oih <- cache.allOpInputHashes) yield {
       if (!oihSet.contains(oih)) {
         cache.removeRecord(oih)
