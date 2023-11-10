@@ -12,7 +12,7 @@ developers += Developer(
 )
 
 libraryDependencies ++= Seq(
-  "org.webjars" % "webjars-locator-core" % "0.54",
+  "org.webjars" % "webjars-locator-core" % "0.55",
   "org.specs2" %% "specs2-core" % "4.20.2" % "test",
   "junit" % "junit" % "4.13.2" % "test"
 )
