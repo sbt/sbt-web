@@ -11,9 +11,9 @@ import java.util.Arrays
 class Bytes(private[incremental] val arr: Array[Byte]) {
   override def toString = Arrays.toString(arr)
   override def equals(that: Any): Boolean = that match {
-    case null => false
+    case null         => false
     case other: Bytes => Arrays.equals(arr, other.arr)
-    case _ => false
+    case _            => false
   }
   override def hashCode: Int = Arrays.hashCode(arr)
 }
@@ -22,6 +22,7 @@ class Bytes(private[incremental] val arr: Array[Byte]) {
  * Wraps a byte array to ensure immutability.
  */
 private[incremental] object Bytes {
+
   /**
    * Create a Bytes object with a clone of the given array.
    */

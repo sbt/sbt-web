@@ -8,7 +8,7 @@ import java.util.Base64
 
 import sbt.util.CacheStore
 
-import scala.collection.immutable.{Map, Set}
+import scala.collection.immutable.{ Map, Set }
 
 /**
  * Support for reading and writing cache files.
@@ -34,7 +34,7 @@ private[incremental] object OpCacheProtocol {
   import sjsonnew._
   import BasicJsonProtocol._
 
-  import OpCache.{FileHash, Record}
+  import OpCache.{ FileHash, Record }
 
   implicit val fileFormat: JsonFormat[File] = projectFormat[File, String](_.getAbsolutePath, new File(_))
   implicit val bytesFormat: JsonFormat[Bytes] = projectFormat[Bytes, String](

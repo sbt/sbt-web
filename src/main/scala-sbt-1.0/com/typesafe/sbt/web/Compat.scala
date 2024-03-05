@@ -10,7 +10,8 @@ object Compat {
   // More details:
   // [[https://github.com/sbt/sbt-paradox-material-theme/pull/61]]
   /**
-   * @deprecated Use `streams.value.cacheStoreFactory.make("...")` instead
+   * @deprecated
+   *   Use `streams.value.cacheStoreFactory.make("...")` instead
    */
   @deprecated(message = """Use `streams.value.cacheStoreFactory.make("...")` instead""")
   def cacheStore(stream: sbt.Keys.TaskStreams, identifier: String): sbt.util.CacheStore =

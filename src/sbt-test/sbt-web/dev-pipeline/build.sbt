@@ -12,12 +12,11 @@ transform := {
   { (mappings: Seq[PathMapping]) =>
     // transform js files - rename as .new.js just for testing
     val (jsMappings, otherMappings) = mappings partition (_._2.endsWith(".js"))
-    val transformedMappings = jsMappings map {
-      case (file, path) =>
-        val newPath = path.dropRight(3) + ".new.js"
-        val newFile = targetDir / newPath
-        IO.touch(newFile)
-        newFile -> newPath
+    val transformedMappings = jsMappings map { case (file, path) =>
+      val newPath = path.dropRight(3) + ".new.js"
+      val newFile = targetDir / newPath
+      IO.touch(newFile)
+      newFile -> newPath
     }
     transformedMappings ++ otherMappings
   }

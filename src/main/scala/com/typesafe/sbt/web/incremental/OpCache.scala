@@ -8,9 +8,8 @@ import sbt.Hash
 import scala.collection.immutable.Set
 
 /**
- * Cache for recording which operations have successfully completed. Associates
- * a hash of the operations' inputs (OpInputHash) with a record of the files
- * that were accessed by the operation.
+ * Cache for recording which operations have successfully completed. Associates a hash of the operations' inputs
+ * (OpInputHash) with a record of the files that were accessed by the operation.
  */
 private[incremental] class OpCache(var content: Map[OpInputHash, OpCache.Record] = Map.empty) {
   import OpCache._
@@ -35,15 +34,15 @@ private[incremental] class OpCache(var content: Map[OpInputHash, OpCache.Record]
 private[incremental] object OpCache {
 
   /**
-   * A record stored in a cache. At the moment a record stores
-   * a list of files accessed, but the record could be extended to store other
-   * information in the future.
+   * A record stored in a cache. At the moment a record stores a list of files accessed, but the record could be
+   * extended to store other information in the future.
    */
   final case class Record(fileHashes: Set[FileHash], products: Set[File])
 
   /**
    * A hash of a file's content.
-   * @param sha1IfExists `Some(sha1)` if the file exists, `None` otherwise.
+   * @param sha1IfExists
+   *   `Some(sha1)` if the file exists, `None` otherwise.
    */
   final case class FileHash(file: File, sha1IfExists: Option[Bytes])
 
@@ -62,13 +61,12 @@ private[incremental] object OpCache {
    * Check if any of the given FileHash objects have changed.
    */
   def anyFileChanged(fileHashes: Set[FileHash]): Boolean = {
-    fileHashes.foldLeft(false) ({
+    fileHashes.foldLeft(false)({
       case (true, _) => true // We've already found a changed file, no need to check other files
-      case (false, recordedContent) => {
+      case (false, recordedContent) =>
         val currentContent = OpCache.fileHash(recordedContent.file)
         val fileChanged = currentContent != recordedContent
         fileChanged
-      }
     })
   }
 
@@ -85,22 +83,20 @@ private[incremental] object OpCache {
   }
 
   /**
-   * Given a set of operations, filter out any operations that are in the cache
-   * and unchanged, and only return operations that are not in the cache or that
-   * are in the cache but have changed.
+   * Given a set of operations, filter out any operations that are in the cache and unchanged, and only return
+   * operations that are not in the cache or that are in the cache but have changed.
    */
   def newOrChanged[Op](cache: OpCache, ops: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Seq[Op] = {
     val opsAndHashes: Seq[(Op, OpInputHash)] = ops.map(w => (w, opInputHasher.hash(w)))
-    opsAndHashes.filter {
-      case (_, wh) =>
-        cache.getRecord(wh).fold(true) { record =>
-          // Check that cached file hashes are up to date
-          val fileChanged = OpCache.anyFileChanged(record.fileHashes)
-          if (fileChanged) cache.removeRecord(wh)
-          fileChanged
-        }
-    } map {
-      case (w, _) => w
+    opsAndHashes.filter { case (_, wh) =>
+      cache.getRecord(wh).fold(true) { record =>
+        // Check that cached file hashes are up to date
+        val fileChanged = OpCache.anyFileChanged(record.fileHashes)
+        if (fileChanged) cache.removeRecord(wh)
+        fileChanged
+      }
+    } map { case (w, _) =>
+      w
     }
   }
 
@@ -116,6 +112,7 @@ private[incremental] object OpCache {
       val record = Record(fileHashes, filesWritten)
       cache.putRecord(oih, record)
   }
+
   /**
    * Add multiple operations and results into the cache.
    */

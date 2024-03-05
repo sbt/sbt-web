@@ -6,8 +6,7 @@ package com.typesafe.sbt.web.incremental
 import sbt.Hash
 
 /**
- * A hash of an operation's input. Used to check if two operations have the
- * same or different inputs.
+ * A hash of an operation's input. Used to check if two operations have the same or different inputs.
  */
 case class OpInputHash(bytes: Bytes)
 
@@ -15,10 +14,12 @@ case class OpInputHash(bytes: Bytes)
  * Factory methods for OpInputHash.
  */
 object OpInputHash {
+
   /**
    * Hash the given bytes.
    */
   def hashBytes(bytes: Array[Byte]): OpInputHash = new OpInputHash(Bytes(Hash(bytes)))
+
   /**
    * Hash the given string.
    */
@@ -36,6 +37,7 @@ trait OpInputHasher[Op] {
  * Factory methods for OpInputHash.
  */
 object OpInputHasher {
+
   /**
    * Construct an OpInputHash that uses the given hashing logic.
    */
@@ -43,4 +45,3 @@ object OpInputHasher {
     def hash(op: Op) = f(op)
   }
 }
-

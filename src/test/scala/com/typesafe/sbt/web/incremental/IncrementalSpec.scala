@@ -14,7 +14,7 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map[String,OpResult]("op1" -> OpFailure),
+            Map[String, OpResult]("op1" -> OpFailure),
             prunedOps must_== List("op1")
           )
         }._2
@@ -220,7 +220,6 @@ class IncrementalSpec extends Specification {
 
     "vacuum unneeded ops from the cache" in {
       IO.withTemporaryDirectory { tmpDir =>
-
         // Create an empty cache
         syncIncremental(tmpDir, List[String]()) { prunedOps =>
           (
@@ -311,7 +310,7 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map[String,OpResult]("op2" -> OpFailure),
+            Map[String, OpResult]("op2" -> OpFailure),
             prunedOps must_== List("op1")
           )
         } must throwA[IllegalArgumentException]
@@ -326,9 +325,9 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map[String,OpResult]("op1" -> OpFailure),
+            Map[String, OpResult]("op1" -> OpFailure),
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -339,13 +338,13 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpFailure),
             prunedOps must_== List("op1")
-            )
+          )
         }
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map("op1" -> OpFailure),
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -359,13 +358,13 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set())),
             prunedOps must_== List("op1")
-            )
+          )
         }
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List()
-            )
+          )
         }._2
       }
     }
@@ -381,7 +380,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         IO.write(file1, "y")
@@ -390,7 +389,7 @@ class IncrementalSpec extends Specification {
           (
             Map.empty,
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -404,7 +403,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1))),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         IO.write(file1, "y")
@@ -413,7 +412,7 @@ class IncrementalSpec extends Specification {
           (
             Map.empty,
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -427,7 +426,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1))),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         IO.delete(file1)
@@ -436,7 +435,7 @@ class IncrementalSpec extends Specification {
           (
             Map.empty,
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -452,7 +451,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1, file2), filesWritten = Set())),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         IO.write(file2, "y")
@@ -461,7 +460,7 @@ class IncrementalSpec extends Specification {
           (
             Map.empty,
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -477,7 +476,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(), filesWritten = Set(file1, file2))),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         IO.write(file2, "y")
@@ -486,7 +485,7 @@ class IncrementalSpec extends Specification {
           (
             Map.empty,
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -511,7 +510,7 @@ class IncrementalSpec extends Specification {
               "op4" -> OpFailure
             ),
             prunedOps must_== List("op1", "op2", "op3", "op4")
-            )
+          )
         }
 
         IO.write(file1, "y")
@@ -525,20 +524,19 @@ class IncrementalSpec extends Specification {
               "op4" -> OpFailure
             ),
             prunedOps must_== List("op1", "op3", "op4")
-            )
+          )
         }._2
       }
     }
 
     "vacuum unneeded ops from the cache" in {
       IO.withTemporaryDirectory { tmpDir =>
-
-      // Create an empty cache
+        // Create an empty cache
         syncIncremental(tmpDir, List[String]()) { prunedOps =>
           (
             Map.empty,
             prunedOps must_== List()
-            )
+          )
         }
 
         val cacheFile = new File(tmpDir, "op-cache")
@@ -553,7 +551,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set())),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         cacheFile.length() must_!= emptyCacheFileLength
@@ -564,7 +562,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op9" -> OpFailure),
             prunedOps must_== List("op9")
-            )
+          )
         }
 
         // Check cache file is empty again, i.e. op1 has been vacuumed
@@ -592,7 +590,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         // No ops should run because we leave the hash prefix the same
@@ -603,7 +601,7 @@ class IncrementalSpec extends Specification {
           (
             Map(),
             prunedOps must_== List()
-            )
+          )
         }
 
         // All ops should run again because we changed the hash prefix
@@ -614,7 +612,7 @@ class IncrementalSpec extends Specification {
           (
             Map("op1" -> OpSuccess(filesRead = Set(file1), filesWritten = Set(file2))),
             prunedOps must_== List("op1")
-            )
+          )
         }._2
       }
     }
@@ -623,9 +621,9 @@ class IncrementalSpec extends Specification {
       IO.withTemporaryDirectory { tmpDir =>
         syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map[String,OpResult]("op2" -> OpFailure),
+            Map[String, OpResult]("op2" -> OpFailure),
             prunedOps must_== List("op1")
-            )
+          )
         } must throwA[IllegalArgumentException]
       }
     }
@@ -635,20 +633,20 @@ class IncrementalSpec extends Specification {
         val file1 = new File(tmpDir, "1")
         val file2 = new File(tmpDir, "2")
 
-        syncIncremental(tmpDir, List("op1", "op2")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1", "op2")) { _ =>
           IO.write(file1, "x")
           IO.write(file2, "x")
           (
-            Map[String,OpResult](
+            Map[String, OpResult](
               "op1" -> OpSuccess(Set.empty, Set(file1)),
               "op2" -> OpSuccess(Set.empty, Set(file2))
             ),
             Unit
-            )
+          )
         }
         val (outputFiles, _) = syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map.empty[String,OpResult],
+            Map.empty[String, OpResult],
             prunedOps must beEmpty
           )
         }
@@ -668,26 +666,26 @@ class IncrementalSpec extends Specification {
 
         IO.write(infile, "1")
 
-        syncIncremental(tmpDir, List("op1")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1")) { _ =>
           IO.write(file1, "x")
           IO.write(file2, "x")
           (
-            Map[String,OpResult](
+            Map[String, OpResult](
               "op1" -> OpSuccess(Set(infile), Set(file1, file2))
             ),
             Unit
-            )
+          )
         }
 
         IO.write(infile, "2")
 
         val (outputFiles, _) = syncIncremental(tmpDir, List("op1")) { prunedOps =>
           (
-            Map[String,OpResult](
+            Map[String, OpResult](
               "op1" -> OpSuccess(Set(infile), Set(file1))
             ),
             prunedOps must_== List("op1")
-            )
+          )
         }
 
         outputFiles must_== Set(file1)
@@ -703,28 +701,28 @@ class IncrementalSpec extends Specification {
         val file2 = new File(tmpDir, "2")
         val infile = new File(tmpDir, "in")
 
-        syncIncremental(tmpDir, List("op1", "op2")) { prunedOps =>
+        syncIncremental(tmpDir, List("op1", "op2")) { _ =>
           IO.write(file1, "x")
           IO.write(file2, "x")
           (
-            Map[String,OpResult](
+            Map[String, OpResult](
               "op1" -> OpSuccess(Set(infile), Set(file1)),
               "op2" -> OpSuccess(Set.empty, Set(file2))
             ),
             Unit
-            )
+          )
         }
 
         IO.write(infile, "2")
 
-        val (outputFiles, _) = syncIncremental(tmpDir, List("op1", "op3")) { prunedOps =>
+        val (outputFiles, _) = syncIncremental(tmpDir, List("op1", "op3")) { _ =>
           (
-            Map[String,OpResult](
+            Map[String, OpResult](
               "op1" -> OpSuccess(Set(infile), Set.empty),
               "op3" -> OpSuccess(Set.empty, Set(file1, file2))
             ),
             Unit
-            )
+          )
         }
 
         outputFiles must_== Set(file1, file2)

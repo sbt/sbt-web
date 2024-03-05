@@ -5,6 +5,7 @@ import sbt.Def.Initialize
 import com.typesafe.sbt.web.PathMapping
 
 object Pipeline {
+
   /**
    * Each pipeline stage transforms the mappings from the previous stage.
    */
