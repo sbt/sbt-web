@@ -16,3 +16,7 @@ project/plugins/project/
 .idea/
 .idea_modules/
 .bsp/
+.history
+.cache
+.lib/
+hs_err_pid*
