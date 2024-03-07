@@ -25,12 +25,12 @@ class JsSpec extends Specification {
 
     "create JS objects with implicit conversions" in {
       val config = JS.Object(
-        "string"   -> "abc",
-        "seq"      -> Seq(1, 2, 42),
-        "map"      -> Map("answer" -> 42),
-        "range"    -> (1 to 3),
-        "mixed"    -> (1, "b", Map("a" -> 42)),
-        "file"     -> new java.io.File("/path/to/file"),
+        "string" -> "abc",
+        "seq" -> Seq(1, 2, 42),
+        "map" -> Map("answer" -> 42),
+        "range" -> (1 to 3),
+        "mixed" -> (1, "b", Map("a" -> 42)),
+        "file" -> new java.io.File("/path/to/file"),
         "function" -> JavaScript("function f() { ... }")
       )
 

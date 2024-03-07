@@ -13,8 +13,7 @@ import xsbti.Problem
 sealed trait OpResult
 
 /**
- * An operation that succeeded. Contains information about which files the
- * operation read and wrote.
+ * An operation that succeeded. Contains information about which files the operation read and wrote.
  */
 final case class OpSuccess(filesRead: Set[File], filesWritten: Set[File]) extends OpResult
 

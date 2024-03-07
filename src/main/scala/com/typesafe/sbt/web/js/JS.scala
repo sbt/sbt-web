@@ -87,7 +87,9 @@ object JS {
       Write[(A, B, C, D)](t => jsArray(Seq(write[A](t._1), write[B](t._2), write[C](t._3), write[D](t._4))))
 
     implicit def tuple5[A: Write, B: Write, C: Write, D: Write, E: Write]: Write[(A, B, C, D, E)] =
-      Write[(A, B, C, D, E)](t => jsArray(Seq(write[A](t._1), write[B](t._2), write[C](t._3), write[D](t._4), write[E](t._5))))
+      Write[(A, B, C, D, E)](t =>
+        jsArray(Seq(write[A](t._1), write[B](t._2), write[C](t._3), write[D](t._4), write[E](t._5)))
+      )
 
     implicit def map[V: Write]: Write[Map[String, V]] =
       Write[Map[String, V]](m => jsObject(m.map { case (k, v) => (k, write[V](v)) }))
@@ -97,15 +99,15 @@ object JS {
     def quoted(s: String): String = "\"" + (s flatMap escaped) + "\""
 
     def escaped(char: Char): String = char match {
-      case '"'  => "\\\""
-      case '\\' => "\\\\"
-      case '\b' => "\\b"
-      case '\f' => "\\f"
-      case '\n' => "\\n"
-      case '\r' => "\\r"
-      case '\t' => "\\t"
-      case c if c.isControl => f"\\u${c}%04x"
-      case c => c.toString
+      case '"'              => "\\\""
+      case '\\'             => "\\\\"
+      case '\b'             => "\\b"
+      case '\f'             => "\\f"
+      case '\n'             => "\\n"
+      case '\r'             => "\\r"
+      case '\t'             => "\\t"
+      case c if c.isControl => f"\\u$c%04x"
+      case c                => c.toString
     }
 
     def jsArray(values: Seq[String]): String = values.mkString("[", ", ", "]")
