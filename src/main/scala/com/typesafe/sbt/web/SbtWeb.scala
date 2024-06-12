@@ -75,6 +75,8 @@ object Import {
 
     val exportedMappings =
       TaskKey[Seq[PathMapping]]("web-exported-mappings", "Asset mappings in WebJar format for exporting and packaging.")
+    val webJarsAddMappingsToPackageBin =
+      SettingKey[Boolean]("web-jars-add-mappings-to-package-bin", "TODO")
     val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
     val exportedAssetsIfMissing = TaskKey[File](
       "web-exported-directory-if-missing",
@@ -224,8 +226,20 @@ object SbtWeb extends AutoPlugin {
     (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value),
     (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value),
     assets := (Assets / assets).value,
-    (Compile / packageBin / mappings) ++= (Assets / exportedMappings).value,
-    (Test / packageBin / mappings) ++= (TestAssets / exportedMappings).value,
+    (Compile / packageBin / mappings) ++= {
+      if ((Assets / webJarsAddMappingsToPackageBin).value) {
+        (Assets / exportedMappings).value
+      } else {
+        Nil
+      }
+    },
+    (Test / packageBin / mappings) ++= {
+      if ((TestAssets / webJarsAddMappingsToPackageBin).value) {
+        (TestAssets / exportedMappings).value
+      } else {
+        Nil
+      }
+    },
     (Compile / exportedProducts) ++= exportAssets(Assets, Compile, TrackLevel.TrackAlways).value,
     (Test / exportedProducts) ++= exportAssets(TestAssets, Test, TrackLevel.TrackAlways).value,
     (Compile / exportedProductsIfMissing) ++= exportAssets(Assets, Compile, TrackLevel.TrackIfMissing).value,
@@ -309,6 +323,7 @@ object SbtWeb extends AutoPlugin {
       public.value
     ),
     exportedMappings := createWebJarMappings.value,
+    webJarsAddMappingsToPackageBin := true,
     exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
     exportedAssetsIfMissing := syncExportedAssets(TrackLevel.TrackIfMissing).value,
     exportedAssetsNoTracking := syncExportedAssets(TrackLevel.NoTracking).value,
