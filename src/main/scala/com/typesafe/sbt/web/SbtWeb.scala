@@ -76,7 +76,10 @@ object Import {
     val exportedMappings =
       TaskKey[Seq[PathMapping]]("web-exported-mappings", "Asset mappings in WebJar format for exporting and packaging.")
     val webJarsAddMappingsToPackageBin =
-      SettingKey[Boolean]("web-jars-add-mappings-to-package-bin", "TODO")
+      SettingKey[Boolean](
+        "web-jars-add-mappings-to-package-bin",
+        "If the exported webjar asset mappings should be added to the PackageBin mappings"
+      )
     val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
     val exportedAssetsIfMissing = TaskKey[File](
       "web-exported-directory-if-missing",
