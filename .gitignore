@@ -20,3 +20,5 @@ project/plugins/project/
 .cache
 .lib/
 hs_err_pid*
+
+.sdkmanrc
