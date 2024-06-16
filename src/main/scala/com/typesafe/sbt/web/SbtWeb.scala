@@ -75,10 +75,10 @@ object Import {
 
     val exportedMappings =
       TaskKey[Seq[PathMapping]]("web-exported-mappings", "Asset mappings in WebJar format for exporting and packaging.")
-    val webJarsAddMappingsToPackageBin =
+    val addExportedMappingsToPackageBinMappings =
       SettingKey[Boolean](
-        "web-jars-add-mappings-to-package-bin",
-        "If the exported webjar asset mappings should be added to the PackageBin mappings"
+        "web-add-exportedmappings-to-packagebin-mappings",
+        "If exportedMappings should be added to the PackageBin mappings"
       )
     val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
     val exportedAssetsIfMissing = TaskKey[File](
@@ -234,14 +234,14 @@ object SbtWeb extends AutoPlugin {
     (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value),
     assets := (Assets / assets).value,
     (Compile / packageBin / mappings) ++= {
-      if ((Assets / webJarsAddMappingsToPackageBin).value) {
+      if ((Assets / addExportedMappingsToPackageBinMappings).value) {
         (Assets / exportedMappings).value
       } else {
         Nil
       }
     },
     (Test / packageBin / mappings) ++= {
-      if ((TestAssets / webJarsAddMappingsToPackageBin).value) {
+      if ((TestAssets / addExportedMappingsToPackageBinMappings).value) {
         (TestAssets / exportedMappings).value
       } else {
         Nil
@@ -330,7 +330,7 @@ object SbtWeb extends AutoPlugin {
       public.value
     ),
     exportedMappings := createWebJarMappings.value,
-    webJarsAddMappingsToPackageBin := true,
+    addExportedMappingsToPackageBinMappings := true,
     exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
     exportedAssetsIfMissing := syncExportedAssets(TrackLevel.TrackIfMissing).value,
     exportedAssetsNoTracking := syncExportedAssets(TrackLevel.NoTracking).value,
