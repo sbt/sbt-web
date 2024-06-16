@@ -102,6 +102,10 @@ object Import {
     )
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
 
+    val disableExportAssets = AttributeKey[Boolean](
+      "disableExportAssets",
+      "If added to the state and set to true, the assets will not be exported"
+    )
   }
 
   object WebJs {
@@ -408,7 +412,7 @@ object SbtWeb extends AutoPlugin {
       exportConf: Configuration,
       track: TrackLevel
   ): Def.Initialize[Task[Classpath]] = Def.taskDyn {
-    if ((exportConf / exportJars).value) Def.task {
+    if ((exportConf / exportJars).value || state.value.get(disableExportAssets).getOrElse(false)) Def.task {
       Seq.empty
     }
     else {
