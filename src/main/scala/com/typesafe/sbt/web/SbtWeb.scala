@@ -102,9 +102,9 @@ object Import {
     )
     val stagingDirectory = SettingKey[File]("web-staging-directory", "Directory where we stage distributions/releases.")
 
-    val disableExportAssets = AttributeKey[Boolean](
-      "disableExportAssets",
-      "If added to the state and set to true, the assets will not be exported"
+    val disableExportedProducts = AttributeKey[Boolean](
+      "disableExportedProducts",
+      "If added to the state and set to true, assets will not be exported via exportedProducts"
     )
   }
 
@@ -334,13 +334,9 @@ object SbtWeb extends AutoPlugin {
     exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
     exportedAssetsIfMissing := syncExportedAssets(TrackLevel.TrackIfMissing).value,
     exportedAssetsNoTracking := syncExportedAssets(TrackLevel.NoTracking).value,
-    exportedProducts := Seq(Attributed.blank(exportedAssets.value).put(webModulesLib.key, moduleName.value)),
-    exportedProductsIfMissing := Seq(
-      Attributed.blank(exportedAssetsIfMissing.value).put(webModulesLib.key, moduleName.value)
-    ),
-    exportedProductsNoTracking := Seq(
-      Attributed.blank(exportedAssetsNoTracking.value).put(webModulesLib.key, moduleName.value)
-    )
+    exportedProducts := exportProducts(exportedAssets).value,
+    exportedProductsIfMissing := exportProducts(exportedAssetsIfMissing).value,
+    exportedProductsNoTracking := exportProducts(exportedAssetsNoTracking).value
   )
 
   val nodeModulesSettings = Seq(
@@ -412,7 +408,7 @@ object SbtWeb extends AutoPlugin {
       exportConf: Configuration,
       track: TrackLevel
   ): Def.Initialize[Task[Classpath]] = Def.taskDyn {
-    if ((exportConf / exportJars).value || state.value.get(disableExportAssets).getOrElse(false)) Def.task {
+    if ((exportConf / exportJars).value) Def.task {
       Seq.empty
     }
     else {
@@ -424,6 +420,14 @@ object SbtWeb extends AutoPlugin {
         case TrackLevel.NoTracking =>
           assetConf / exportedProductsNoTracking
       }
+    }
+  }
+
+  def exportProducts(exportTask: TaskKey[File]): Def.Initialize[Task[Classpath]] = Def.task {
+    if (state.value.get(disableExportedProducts).getOrElse(false)) {
+      Seq.empty
+    } else {
+      Seq(Attributed.blank(exportTask.value).put(webModulesLib.key, moduleName.value))
     }
   }
 
