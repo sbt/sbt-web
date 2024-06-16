@@ -423,11 +423,11 @@ object SbtWeb extends AutoPlugin {
     }
   }
 
-  def exportProducts(exportTask: TaskKey[File]): Def.Initialize[Task[Classpath]] = Def.taskDyn {
+  def exportProducts(exportTask: TaskKey[File]): Def.Initialize[Task[Classpath]] = Def.task {
     if (state.value.get(disableExportedProducts).getOrElse(false)) {
-      Def.task[Classpath] { Seq.empty }
+      Seq.empty
     } else {
-      Def.task { Seq(Attributed.blank(exportTask.value).put(webModulesLib.key, moduleName.value)) }
+      Seq(Attributed.blank(exportTask.value).put(webModulesLib.key, moduleName.value))
     }
   }
 
