@@ -11,6 +11,10 @@ developers += Developer(
   url("https://github.com/playframework")
 )
 
+lazy val scala212 = "2.12.20"
+lazy val scala3 = "3.3.4"
+ThisBuild / crossScalaVersions := Seq(scala212, scala3)
+
 libraryDependencies ++= Seq(
   "org.webjars" % "webjars-locator-core" % "0.59",
   "org.specs2" %% "specs2-core"          % "4.20.8" % "test",
@@ -25,4 +29,11 @@ ThisBuild / dynverVTagPrefix := false
 Global / onLoad := (Global / onLoad).value.andThen { s =>
   dynverAssertTagVersion.value
   s
+}
+
+(pluginCrossBuild / sbtVersion) := {
+  scalaBinaryVersion.value match {
+    case "2.12" => "1.10.2"
+    case _      => "2.0.0-M2"
+  }
 }
