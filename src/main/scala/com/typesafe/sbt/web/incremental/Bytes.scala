@@ -3,19 +3,19 @@
  */
 package com.typesafe.sbt.web.incremental
 
-import java.util.Arrays
+import java.util
 
 /**
  * Wraps a byte array to ensure immutability.
  */
 class Bytes(private[incremental] val arr: Array[Byte]) {
-  override def toString = Arrays.toString(arr)
+  override def toString: String = util.Arrays.toString(arr)
   override def equals(that: Any): Boolean = that match {
     case null         => false
-    case other: Bytes => Arrays.equals(arr, other.arr)
+    case other: Bytes => util.Arrays.equals(arr, other.arr)
     case _            => false
   }
-  override def hashCode: Int = Arrays.hashCode(arr)
+  override def hashCode: Int = util.Arrays.hashCode(arr)
 }
 
 /**

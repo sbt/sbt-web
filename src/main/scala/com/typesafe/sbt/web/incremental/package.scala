@@ -99,7 +99,7 @@ package object incremental {
     val cache: OpCache = OpCacheIO.fromFile(cacheFile)
 
     // Before vacuuming the cache, find out what the old cache had produced
-    val allOldProducts = cache.content.values.to[Set].flatMap(_.products)
+    val allOldProducts = cache.content.values.to(Set).flatMap(_.products)
 
     // Clear out any unknown operations from the existing cache
     OpCache.vacuumExcept(cache, ops)
@@ -109,17 +109,17 @@ package object incremental {
     val (results: Map[Op, OpResult], finalResult) = runOps(prunedOps)
 
     // Check returned results are all within the set of given ops
-    val prunedOpsSet: Set[Op] = prunedOps.to[Set]
+    val prunedOpsSet: Set[Op] = prunedOps.to(Set)
     val resultOpsSet: Set[Op] = results.keySet
     val unexpectedOps: Set[Op] = resultOpsSet -- prunedOpsSet
-    if (!unexpectedOps.isEmpty) {
+    if (unexpectedOps.nonEmpty) {
       throw new IllegalArgumentException(s"runOps function returned results for unknown ops: $unexpectedOps")
     }
 
     // Work out what the current valid products are
-    val opsSet: Set[Op] = ops.to[Set]
+    val opsSet: Set[Op] = ops.to(Set)
     val oldProductsToKeep = OpCache.productsForOps(cache, opsSet -- prunedOpsSet)
-    val newProducts = results.values.to[Set].flatMap {
+    val newProducts = results.values.to(Set).flatMap {
       case OpFailure              => Set.empty[File]
       case OpSuccess(_, products) => products
     }
@@ -147,6 +147,6 @@ package object incremental {
    * }
    * }}}
    */
-  implicit def toStringInputHasher[Op] = OpInputHasher[Op](op => OpInputHash.hashString(op.toString))
+  implicit def toStringInputHasher[Op]: OpInputHasher[Op] = OpInputHasher[Op](op => OpInputHash.hashString(op.toString))
 
 }
