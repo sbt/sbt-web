@@ -128,6 +128,6 @@ private[incremental] object OpCache {
     ops.flatMap { op =>
       val record = cache.getRecord(opInputHasher.hash(op))
       record.fold(Set.empty[File])(_.products)
-    }.toSet
+    }
   }
 }

@@ -1,15 +1,18 @@
 package com.typesafe.sbt.web
 
-import sbt._
+import sbt.{ given, * }
 import sbt.internal.inc.Analysis
 import sbt.internal.io.Source
-import sbt.Keys._
+import sbt.Keys.*
 import sbt.Defaults.relativeMappings
+import scala.language.implicitConversions
 import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess }
+import com.typesafe.sbt.web.incremental.{ toStringInputHasher, OpResult, OpSuccess }
 import xsbti.Reporter
+
+import PluginCompat.*
 
 object Import {
 
@@ -178,12 +181,12 @@ object SbtWeb extends AutoPlugin {
 
   override def requires = sbt.plugins.JvmPlugin
 
-  import autoImport._
-  import WebKeys._
+  import autoImport.*
+  import WebKeys.*
 
-  override def projectConfigurations = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
+  override def projectConfigurations: Seq[Configuration] = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
 
-  override def buildSettings: Seq[Def.Setting[_]] = Seq(
+  override def buildSettings: Seq[Def.Setting[?]] = Seq(
     (Plugin / nodeModuleDirectory) := (Plugin / target).value / "node-modules",
     (Plugin / nodeModules / webJarsCache) := (Plugin / target).value / "webjars-plugin.cache",
     (Plugin / webJarsClassLoader) := SbtWeb.getClass.getClassLoader,
@@ -199,7 +202,7 @@ object SbtWeb extends AutoPlugin {
     )
   ) ++ inConfig(Plugin)(nodeModulesSettings)
 
-  override def projectSettings: Seq[Setting[_]] = Seq(
+  override def projectSettings: Seq[Setting[?]] = Seq(
     reporter := new CompileProblems.LoggerReporter(5, streams.value.log),
     webTarget := target.value / "web",
     (Assets / sourceDirectory) := (Compile / sourceDirectory).value / "assets",
@@ -278,7 +281,7 @@ object SbtWeb extends AutoPlugin {
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
     packageSettings
 
-  val unscopedAssetSettings: Seq[Setting[_]] = Seq(
+  val unscopedAssetSettings: Seq[Setting[?]] = Seq(
     includeFilter := GlobFilter("*"),
     sourceGenerators := Nil,
     managedSourceDirectories := Nil,
@@ -286,7 +289,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
     unmanagedSources := unmanagedSourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get,
+      .get(),
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
     (sources / mappings) := relativeMappings(sources, sourceDirectories).value,
@@ -296,7 +299,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
     unmanagedResources := unmanagedResourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get,
+      .get(),
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
     (resources / mappings) := relativeMappings(resources, resourceDirectories).value,
@@ -503,14 +506,14 @@ object SbtWeb extends AutoPlugin {
   private def generateNodeWebJars(target: File, cache: File, classLoader: ClassLoader): Seq[File] = {
     withWebJarExtractor(target, cache, classLoader) { (e, to) =>
       e.extractAllNodeModulesTo(to)
-    }.**(AllPassFilter).get
+    }.**(AllPassFilter).get()
   }
 
   private def generateWebJars(target: File, lib: String, cache: File, classLoader: ClassLoader): Seq[File] = {
     withWebJarExtractor(target / lib, cache, classLoader) { (e, to) =>
       e.extractAllWebJarsTo(to)
     }
-    target.**(AllPassFilter).get
+    target.**(AllPassFilter).get()
   }
 
   // Mapping deduplication
