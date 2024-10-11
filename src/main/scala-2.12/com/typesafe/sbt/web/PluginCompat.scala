@@ -2,6 +2,7 @@ package com.typesafe.sbt.web
 
 import java.nio.file.{ Path => NioPath }
 import sbt.*
+import sbt.Keys.Classpath
 import xsbti.FileConverter
 
 private[web] object PluginCompat {
@@ -16,5 +17,6 @@ private[web] object PluginCompat {
     cp.map(_.data.toPath()).toVector
   def toFiles(cp: Seq[Attributed[File]])(implicit conv: FileConverter): Vector[File] =
     cp.map(_.data).toVector
-  def toSet[A](iterable: Iterable[A] ): Set[A] = iterable.to[Set]
+  def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to[Set]
+  def classpathToFiles( classpath: Classpath): Seq[FileRef] = classpath.files
 }

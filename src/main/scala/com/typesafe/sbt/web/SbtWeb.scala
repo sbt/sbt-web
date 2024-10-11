@@ -493,7 +493,7 @@ object SbtWeb extends AutoPlugin {
   }
 
   private def classLoader(classpath: Classpath): ClassLoader =
-    new java.net.URLClassLoader(Path.toURLs(classpath.files), null)
+    new java.net.URLClassLoader(Path.toURLs(classpathToFiles(classpath)), null)
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)(
       block: (WebJarExtractor, File) => Unit
