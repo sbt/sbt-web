@@ -4,7 +4,7 @@
 package com.typesafe.sbt.web
 
 import java.io.File
-import PluginCompat.toCompatSet
+import PluginCompat.toSet
 
 /**
  * The incremental task API lets tasks run more quickly when they are called more than once. The idea is to do less work
@@ -100,7 +100,7 @@ package object incremental {
     val cache: OpCache = OpCacheIO.fromFile(cacheFile)
 
     // Before vacuuming the cache, find out what the old cache had produced
-    val allOldProducts = toCompatSet(cache.content.values).flatMap(_.products)
+    val allOldProducts = toSet(cache.content.values).flatMap(_.products)
 
     // Clear out any unknown operations from the existing cache
     OpCache.vacuumExcept(cache, ops)
@@ -110,7 +110,7 @@ package object incremental {
     val (results: Map[Op, OpResult], finalResult) = runOps(prunedOps)
 
     // Check returned results are all within the set of given ops
-    val prunedOpsSet: Set[Op] = toCompatSet(prunedOps)
+    val prunedOpsSet: Set[Op] = toSet(prunedOps)
     val resultOpsSet: Set[Op] = results.keySet
     val unexpectedOps: Set[Op] = resultOpsSet -- prunedOpsSet
     if (unexpectedOps.nonEmpty) {
@@ -118,9 +118,9 @@ package object incremental {
     }
 
     // Work out what the current valid products are
-    val opsSet: Set[Op] = toCompatSet(ops)
+    val opsSet: Set[Op] = toSet(ops)
     val oldProductsToKeep = OpCache.productsForOps(cache, opsSet -- prunedOpsSet)
-    val newProducts = toCompatSet(results.values).flatMap {
+    val newProducts = toSet(results.values).flatMap {
       case OpFailure              => Set.empty[File]
       case OpSuccess(_, products) => products
     }

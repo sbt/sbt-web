@@ -3,7 +3,7 @@
  */
 package com.typesafe.sbt.web.incremental
 
-import com.typesafe.sbt.web.PluginCompat.toCompatSet
+import com.typesafe.sbt.web.PluginCompat.toSet
 import java.io.File
 import sbt.Hash
 
@@ -74,7 +74,7 @@ private[incremental] object OpCache {
    * Remove all operations from the cache that aren't in the given set of operations.
    */
   def vacuumExcept[Op](cache: OpCache, opsToKeep: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Unit = {
-    val oihSet: Set[OpInputHash] = toCompatSet(opsToKeep.map(opInputHasher.hash))
+    val oihSet: Set[OpInputHash] = toSet(opsToKeep.map(opInputHasher.hash))
     for (oih <- cache.allOpInputHashes) yield {
       if (!oihSet.contains(oih)) {
         cache.removeRecord(oih)
