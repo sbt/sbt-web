@@ -36,7 +36,8 @@ private[incremental] object OpCacheProtocol {
 
   import OpCache.{ FileHash, Record }
 
-  implicit val fileFormat: JsonFormat[File] = BasicJsonProtocol.projectFormat[File, String](_.getAbsolutePath, new File(_))
+  implicit val fileFormat: JsonFormat[File] =
+    BasicJsonProtocol.projectFormat[File, String](_.getAbsolutePath, new File(_))
   implicit val bytesFormat: JsonFormat[Bytes] = BasicJsonProtocol.projectFormat[Bytes, String](
     bytes => Base64.getEncoder.encodeToString(bytes.arr),
     bytes => new Bytes(Base64.getDecoder.decode(bytes))

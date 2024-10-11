@@ -18,5 +18,5 @@ private[web] object PluginCompat {
   def toFiles(cp: Seq[Attributed[File]])(implicit conv: FileConverter): Vector[File] =
     cp.map(_.data).toVector
   def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to[Set]
-  def classpathToFiles( classpath: Classpath): Seq[FileRef] = classpath.files
+  def classpathToFiles(classpath: Classpath): Seq[FileRef] = classpath.files
 }

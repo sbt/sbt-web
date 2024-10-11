@@ -1,6 +1,6 @@
 package com.typesafe.sbt.web
 
-import sbt.{ given, * }
+import sbt.{ Def, *, given }
 import sbt.internal.inc.Analysis
 import sbt.internal.io.Source
 import sbt.Keys.*
@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.web.incremental.{ toStringInputHasher, OpResult, OpSuccess }
+import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess, toStringInputHasher }
 import xsbti.Reporter
 
 import PluginCompat.*
@@ -184,7 +184,8 @@ object SbtWeb extends AutoPlugin {
   import autoImport.*
   import WebKeys.*
 
-  override def projectConfigurations: Seq[Configuration] = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
+  override def projectConfigurations: Seq[Configuration] =
+    super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
 
   override def buildSettings: Seq[Def.Setting[?]] = Seq(
     (Plugin / nodeModuleDirectory) := (Plugin / target).value / "node-modules",
@@ -444,7 +445,7 @@ object SbtWeb extends AutoPlugin {
   /**
    * Create package mappings for all assets, adding the optional prefix.
    */
-  def packageAssetsMappings = Def.task {
+  def packageAssetsMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
     val prefix = packagePrefix.value
     (Defaults.ConfigGlobal / pipeline).value map { case (file, path) =>
       file -> (prefix + path)
@@ -454,7 +455,7 @@ object SbtWeb extends AutoPlugin {
   /**
    * Get module names for all internal web module dependencies on the classpath.
    */
-  def getInternalWebModules(conf: Configuration) = Def.task {
+  def getInternalWebModules(conf: Configuration): Def.Initialize[Task[Seq[String]]] = Def.task {
     (conf / internalDependencyClasspath).value.flatMap(_.get(WebKeys.webModulesLib.key))
   }
 
