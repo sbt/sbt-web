@@ -16,4 +16,5 @@ private[web] object PluginCompat:
     cp.map(toNioPath).toVector
   inline def toFiles(cp: Seq[Attributed[HashedVirtualFileRef]])(using conv: FileConverter): Vector[File] =
     toNioPaths(cp).map(_.toFile())
+  def toCompatSet[A](iterable: Iterable[A]): Set[A] = iterable.to(Set)
 end PluginCompat
