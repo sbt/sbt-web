@@ -1,4 +1,4 @@
-package com.typesafe.sbt.web
+package com.typesafe.sbt
 
 import java.nio.file.{ Path => NioPath }
 import java.io.{ File => IoFile }
@@ -6,7 +6,7 @@ import sbt.*
 import sbt.Keys.Classpath
 import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFile }
 
-private[web] object PluginCompat:
+private[sbt] object PluginCompat:
   type FileRef = HashedVirtualFileRef
   type Out = VirtualFile
 

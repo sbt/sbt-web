@@ -3,7 +3,7 @@
  */
 package com.typesafe.sbt.web.incremental
 
-import com.typesafe.sbt.web.PluginCompat.toSet
+import com.typesafe.sbt.PluginCompat.toSet
 import java.io.File
 import sbt.Hash
 

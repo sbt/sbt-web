@@ -4,7 +4,7 @@
 package com.typesafe.sbt.web
 
 import java.io.File
-import PluginCompat.toSet
+import com.typesafe.sbt.PluginCompat.toSet
 
 /**
  * The incremental task API lets tasks run more quickly when they are called more than once. The idea is to do less work

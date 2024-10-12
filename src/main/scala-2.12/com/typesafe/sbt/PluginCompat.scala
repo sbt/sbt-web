@@ -1,11 +1,12 @@
-package com.typesafe.sbt.web
+package com.typesafe.sbt
 
-import java.nio.file.{ Path => NioPath }
 import sbt.*
 import sbt.Keys.Classpath
 import xsbti.FileConverter
 
-private[web] object PluginCompat {
+import java.nio.file.Path as NioPath
+
+private[sbt] object PluginCompat {
   type FileRef = java.io.File
   type Out = java.io.File
 
