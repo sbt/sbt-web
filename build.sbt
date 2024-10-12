@@ -37,3 +37,10 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
     case _      => "2.0.0-M2"
   }
 }
+
+scalacOptions := {
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, major)) => Seq("-Xsource:3")
+    case _ => Seq.empty
+  }
+}
