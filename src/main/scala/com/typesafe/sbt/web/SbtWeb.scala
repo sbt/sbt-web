@@ -1,6 +1,6 @@
 package com.typesafe.sbt.web
 
-import sbt.{ Def, *, given }
+import sbt.{Def, given, *}
 import sbt.internal.inc.Analysis
 import sbt.internal.io.Source
 import sbt.Keys.*
@@ -10,9 +10,9 @@ import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess, toStringInputHasher }
-import xsbti.Reporter
+import xsbti.{ Reporter, FileConverter }
 
-import PluginCompat.*
+import com.typesafe.sbt.PluginCompat.*
 
 object Import {
 
@@ -234,8 +234,8 @@ object SbtWeb extends AutoPlugin {
     (TestAssets / webJars / webJarsCache) := webTarget.value / "web-modules" / "webjars-test.cache",
     (Assets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-main.cache",
     (TestAssets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-test.cache",
-    (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value),
-    (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value),
+    (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value, fileConverter.value),
+    (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value, fileConverter.value),
     assets := (Assets / assets).value,
     (Compile / packageBin / mappings) ++= {
       if ((Assets / addExportedMappingsToPackageBinMappings).value) {
@@ -270,12 +270,13 @@ object SbtWeb extends AutoPlugin {
     allPipelineStages := Pipeline.chain(pipelineStages).value,
     pipeline := allPipelineStages.value((Assets / mappings).value),
     deduplicators := Nil,
-    pipeline := deduplicateMappings(pipeline.value, deduplicators.value),
+    pipeline := deduplicateMappings(pipeline.value, deduplicators.value, fileConverter.value),
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
       streams.value.cacheStoreFactory.make("sync-stage"),
       pipeline.value,
-      stagingDirectory.value
+      stagingDirectory.value,
+      fileConverter.value
     )
   ) ++
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
@@ -327,11 +328,12 @@ object SbtWeb extends AutoPlugin {
     allPipelineStages := Pipeline.chain(pipelineStages).value,
     mappings := allPipelineStages.value(mappings.value),
     deduplicators := Nil,
-    mappings := deduplicateMappings(mappings.value, deduplicators.value),
+    mappings := deduplicateMappings(mappings.value, deduplicators.value, fileConverter.value),
     assets := syncMappings(
       streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
       mappings.value,
-      public.value
+      public.value,
+      fileConverter.value
     ),
     exportedMappings := createWebJarMappings.value,
     addExportedMappingsToPackageBinMappings := true,
@@ -388,7 +390,8 @@ object SbtWeb extends AutoPlugin {
       syncMappings(
         streams.value.cacheStoreFactory.make("sync-exported-assets-" + configuration.value.name),
         exportedMappings.value,
-        syncTargetDir
+        syncTargetDir,
+        fileConverter.value
       )
     }
     else
@@ -431,7 +434,7 @@ object SbtWeb extends AutoPlugin {
     if (state.value.get(disableExportedProducts).getOrElse(false)) {
       Seq.empty
     } else {
-      Seq(Attributed.blank(exportTask.value).put(webModulesLib.key, moduleName.value))
+      Seq(Attributed.blank(exportTask.value).put(toKey(webModulesLib), moduleName.value))
     }
   }
 
@@ -456,14 +459,14 @@ object SbtWeb extends AutoPlugin {
    * Get module names for all internal web module dependencies on the classpath.
    */
   def getInternalWebModules(conf: Configuration): Def.Initialize[Task[Seq[String]]] = Def.task {
-    (conf / internalDependencyClasspath).value.flatMap(_.get(WebKeys.webModulesLib.key))
+    (conf / internalDependencyClasspath).value.flatMap(_.get(toKey(WebKeys.webModulesLib)))
   }
 
   /**
    * Remove web module dependencies from a classpath. This is a helper method for Play 2.3 transitions.
    */
   def classpathWithoutAssets(classpath: Classpath): Classpath = {
-    classpath.filter(_.get(WebKeys.webModulesLib.key).isEmpty)
+    classpath.filter(_.get(toKey(WebKeys.webModulesLib)).isEmpty)
   }
 
   def flattenDirectWebModules = Def.task {
@@ -493,8 +496,10 @@ object SbtWeb extends AutoPlugin {
     prefixes.find(s.startsWith).fold(s)(s.stripPrefix)
   }
 
-  private def classLoader(classpath: Classpath): ClassLoader =
+  private def classLoader(classpath: Classpath, conv: FileConverter): ClassLoader = {
+    implicit val fc: FileConverter = conv
     new java.net.URLClassLoader(Path.toURLs(classpathToFiles(classpath)), null)
+  }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)(
       block: (WebJarExtractor, File) => Unit
@@ -533,7 +538,8 @@ object SbtWeb extends AutoPlugin {
    * @return
    *   the (possibly) deduplicated mappings
    */
-  def deduplicateMappings(mappings: Seq[PathMapping], deduplicators: Seq[Deduplicator]): Seq[PathMapping] = {
+  def deduplicateMappings(mappings: Seq[PathMapping], deduplicators: Seq[Deduplicator], conv: FileConverter): Seq[PathMapping] = {
+    implicit val fc: FileConverter = conv
     if (deduplicators.isEmpty) {
       mappings
     } else {
@@ -608,9 +614,10 @@ object SbtWeb extends AutoPlugin {
    * @return
    *   the target value
    */
-  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File): File = {
+  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File, conv: FileConverter): File = {
+    implicit val fc: FileConverter = conv
     val copies = mappings map { case (file, path) =>
-      file -> (target / path)
+      toFile(file) -> (target / path)
     }
     Sync.sync(cacheStore)(copies)
     target

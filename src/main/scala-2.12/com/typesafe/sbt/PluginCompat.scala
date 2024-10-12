@@ -19,5 +19,10 @@ private[sbt] object PluginCompat {
   def toFiles(cp: Seq[Attributed[File]])(implicit conv: FileConverter): Vector[File] =
     cp.map(_.data).toVector
   def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to[Set]
-  def classpathToFiles(classpath: Classpath): Seq[FileRef] = classpath.files
+  def classpathToFiles(classpath: Classpath)(implicit conv: FileConverter): Seq[FileRef] =
+    classpath.files
+  def toKey( settingKey: SettingKey[String] ): AttributeKey[String] = settingKey.key
+  def toNioPath(f: File)(implicit conv: FileConverter): NioPath =
+    f.toPath
+  def toFile(f: File)(implicit conv: FileConverter): File = f
 }

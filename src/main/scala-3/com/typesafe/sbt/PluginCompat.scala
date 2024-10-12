@@ -19,5 +19,11 @@ private[sbt] object PluginCompat:
   inline def toFiles(cp: Seq[Attributed[HashedVirtualFileRef]])(using conv: FileConverter): Vector[File] =
     toNioPaths(cp).map(_.toFile())
   def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to(Set)
-  def classpathToFiles(classpath: Classpath): Seq[File] = toFiles(classpath)
+  inline def classpathToFiles(classpath: Classpath)(using conv: FileConverter): Seq[File] =
+    toFiles(classpath.to(Seq))
+  inline def toKey( settingKey: SettingKey[String] ): StringAttributeKey = StringAttributeKey(settingKey.key.label)
+  def toNioPath(hvf: HashedVirtualFileRef)(using conv: FileConverter): NioPath =
+    conv.toPath(hvf)
+  def toFile(hvf: HashedVirtualFileRef)(using conv: FileConverter): File =
+    toNioPath(hvf).toFile()
 end PluginCompat
