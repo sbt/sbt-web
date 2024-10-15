@@ -5,7 +5,7 @@ $ exists target/web-project-0.1-web-assets.jar
 $ exists extracted/js/a.js
 $ exists extracted/lib/jquery/jquery.js
 
-> 'set WebKeys.packagePrefix in Assets := "public/"'
+> 'set Assets / WebKeys.packagePrefix := "public/"'
 > web-assets:package
 
 $ delete extracted

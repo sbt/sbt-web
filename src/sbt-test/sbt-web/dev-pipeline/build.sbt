@@ -22,4 +22,4 @@ transform := {
   }
 }
 
-pipelineStages in Assets := Seq(transform)
+Assets / pipelineStages := Seq(transform)

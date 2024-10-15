@@ -128,16 +128,16 @@ object Import {
  * {{{
  *   + src
  *   --+ main
- *   ----+ assets .....(sourceDirectory in Assets)
+ *   ----+ assets .....(Assets / sourceDirectory)
  *   ------+ js
- *   ----+ public .....(resourceDirectory in Assets)
+ *   ----+ public .....(Assets / resourceDirectory)
  *   ------+ css
  *   ------+ images
  *   ------+ js
  *   --+ test
- *   ----+ assets .....(sourceDirectory in TestAssets)
+ *   ----+ assets .....(TestAssets / sourceDirectory)
  *   ------+ js
- *   ----+ public .....(resourceDirectory in TestAssets)
+ *   ----+ public .....(TestAssets / resourceDirectory)
  *   ------+ css
  *   ------+ images
  *   ------+ js
@@ -567,6 +567,18 @@ object SbtWeb extends AutoPlugin {
    */
   private def firstResult[A, B](fs: Seq[A => Option[B]])(a: A): Option[B] = {
     (fs.toStream flatMap { f => f(a).toSeq }).headOption
+  }
+
+  /**
+   * Deduplicator that selects the first file contained in the base directory.
+   *
+   * @param base
+   * the base directory to check against
+   * @return
+   * a deduplicator function that prefers files in the base directory
+   */
+  def selectFileFrom(base: File): Deduplicator = { (files: Seq[File]) =>
+    files.find(_.relativeTo(base).isDefined)
   }
 
   /**
