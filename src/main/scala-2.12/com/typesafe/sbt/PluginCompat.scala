@@ -25,4 +25,9 @@ private[sbt] object PluginCompat {
   def toNioPath(f: File)(implicit conv: FileConverter): NioPath =
     f.toPath
   def toFile(f: File)(implicit conv: FileConverter): File = f
+
+  def toFileRef(f: File)(implicit conv: FileConverter): FileRef = f
+
+  def selectFirstPredicate: Seq[FileRef] => Boolean = files =>
+    files.forall(_.isFile) && files.map(_.hashString).distinct.size == 1
 }

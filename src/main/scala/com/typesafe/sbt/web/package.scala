@@ -14,5 +14,5 @@ package object web {
   /**
    * A function for possibly selecting a single file from a sequence.
    */
-  type Deduplicator = Seq[FileRef] => Option[FileRef]
+  type Deduplicator = Seq[File] => Option[File]
 }

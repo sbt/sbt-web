@@ -402,10 +402,11 @@ object SbtWeb extends AutoPlugin {
    * Create package mappings for assets in the webjar format. Use the webjars path prefix and exclude all web module
    * assets.
    */
-  def createWebJarMappings: Def.Initialize[Task[Seq[(File, String)]]] = Def.task {
+  def createWebJarMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
     def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
+    implicit val fc: FileConverter = fileConverter.value
     mappings.value flatMap {
-      case (file, path) if webModule(file) => None
+      case (file, path) if webModule(toFile(file)) => None
       case (file, path)                    => Some(file -> (webJarsPathPrefix.value + path))
     }
   }
@@ -434,7 +435,8 @@ object SbtWeb extends AutoPlugin {
     if (state.value.get(disableExportedProducts).getOrElse(false)) {
       Seq.empty
     } else {
-      Seq(Attributed.blank(exportTask.value).put(toKey(webModulesLib), moduleName.value))
+      implicit val fc: FileConverter = fileConverter.value
+      Seq(Attributed.blank(toFileRef(exportTask.value)).put(toKey(webModulesLib), moduleName.value))
     }
   }
 
@@ -546,9 +548,9 @@ object SbtWeb extends AutoPlugin {
       mappings.groupBy(_._2 /*path*/ ).toSeq flatMap { grouped =>
         val (path, group) = grouped
         if (group.size > 1) {
-          val files = group.map(_._1)
+          val files = group.map(mapping => toFile(mapping._1))
           val deduplicated = firstResult(deduplicators)(files)
-          deduplicated.fold(group)(file => Seq((file, path)))
+          deduplicated.fold(group)(file => Seq((toFileRef(file), path)))
         } else {
           group
         }
@@ -561,18 +563,6 @@ object SbtWeb extends AutoPlugin {
    */
   private def firstResult[A, B](fs: Seq[A => Option[B]])(a: A): Option[B] = {
     (fs.toStream flatMap { f => f(a).toSeq }).headOption
-  }
-
-  /**
-   * Deduplicator that selects the first file contained in the base directory.
-   *
-   * @param base
-   *   the base directory to check against
-   * @return
-   *   a deduplicator function that prefers files in the base directory
-   */
-  def selectFileFrom(base: File): Deduplicator = { (files: Seq[File]) =>
-    files.find(_.relativeTo(base).isDefined)
   }
 
   /**
