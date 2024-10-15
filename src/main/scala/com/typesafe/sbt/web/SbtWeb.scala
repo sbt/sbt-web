@@ -1,6 +1,6 @@
 package com.typesafe.sbt.web
 
-import sbt.{Def, given, *}
+import sbt.{ Def, given, * }
 import sbt.internal.inc.Analysis
 import sbt.internal.io.Source
 import sbt.Keys.*
@@ -407,7 +407,7 @@ object SbtWeb extends AutoPlugin {
     implicit val fc: FileConverter = fileConverter.value
     mappings.value flatMap {
       case (file, path) if webModule(toFile(file)) => None
-      case (file, path)                    => Some(file -> (webJarsPathPrefix.value + path))
+      case (file, path)                            => Some(file -> (webJarsPathPrefix.value + path))
     }
   }
 
@@ -540,7 +540,11 @@ object SbtWeb extends AutoPlugin {
    * @return
    *   the (possibly) deduplicated mappings
    */
-  def deduplicateMappings(mappings: Seq[PathMapping], deduplicators: Seq[Deduplicator], conv: FileConverter): Seq[PathMapping] = {
+  def deduplicateMappings(
+      mappings: Seq[PathMapping],
+      deduplicators: Seq[Deduplicator],
+      conv: FileConverter
+  ): Seq[PathMapping] = {
     implicit val fc: FileConverter = conv
     if (deduplicators.isEmpty) {
       mappings
@@ -604,7 +608,12 @@ object SbtWeb extends AutoPlugin {
    * @return
    *   the target value
    */
-  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File, conv: FileConverter): File = {
+  def syncMappings(
+      cacheStore: sbt.util.CacheStore,
+      mappings: Seq[PathMapping],
+      target: File,
+      conv: FileConverter
+  ): File = {
     implicit val fc: FileConverter = conv
     val copies = mappings map { case (file, path) =>
       toFile(file) -> (target / path)

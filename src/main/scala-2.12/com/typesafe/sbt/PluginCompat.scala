@@ -4,7 +4,7 @@ import sbt.*
 import sbt.Keys.Classpath
 import xsbti.FileConverter
 
-import java.nio.file.Path as NioPath
+import java.nio.file.{ Path => NioPath }
 
 private[sbt] object PluginCompat {
   type FileRef = java.io.File
@@ -21,13 +21,11 @@ private[sbt] object PluginCompat {
   def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to[Set]
   def classpathToFiles(classpath: Classpath)(implicit conv: FileConverter): Seq[FileRef] =
     classpath.files
-  def toKey( settingKey: SettingKey[String] ): AttributeKey[String] = settingKey.key
+  def toKey(settingKey: SettingKey[String]): AttributeKey[String] = settingKey.key
   def toNioPath(f: File)(implicit conv: FileConverter): NioPath =
     f.toPath
   def toFile(f: File)(implicit conv: FileConverter): File = f
-
   def toFileRef(f: File)(implicit conv: FileConverter): FileRef = f
-
   def selectFirstPredicate: Seq[FileRef] => Boolean = files =>
     files.forall(_.isFile) && files.map(_.hashString).distinct.size == 1
 }
