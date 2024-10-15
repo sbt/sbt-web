@@ -573,9 +573,9 @@ object SbtWeb extends AutoPlugin {
    * Deduplicator that selects the first file contained in the base directory.
    *
    * @param base
-   * the base directory to check against
+   *   the base directory to check against
    * @return
-   * a deduplicator function that prefers files in the base directory
+   *   a deduplicator function that prefers files in the base directory
    */
   def selectFileFrom(base: File): Deduplicator = { (files: Seq[File]) =>
     files.find(_.relativeTo(base).isDefined)
