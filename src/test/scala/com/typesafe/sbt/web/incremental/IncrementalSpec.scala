@@ -269,7 +269,8 @@ class IncrementalSpec extends Specification {
         IO.write(file2, "x")
 
         var hashPrefix = ""
-        implicit val hasher: OpInputHasher[String] = OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
+        implicit val hasher: OpInputHasher[String] =
+          OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
 
         // Cache ops with an initial hash prefix
 
@@ -580,7 +581,8 @@ class IncrementalSpec extends Specification {
         IO.write(file2, "x")
 
         var hashPrefix = ""
-        implicit val hasher: OpInputHasher[String] = OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
+        implicit val hasher: OpInputHasher[String] =
+          OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
 
         // Cache ops with an initial hash prefix
 

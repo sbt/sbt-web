@@ -41,6 +41,6 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
 scalacOptions := {
   CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, major)) => Seq("-Xsource:3")
-    case _ => Seq.empty
+    case _                => Seq.empty
   }
 }
