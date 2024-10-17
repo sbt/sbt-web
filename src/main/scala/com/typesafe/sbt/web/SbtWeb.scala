@@ -537,6 +537,8 @@ object SbtWeb extends AutoPlugin {
    *   the mappings to deduplicate
    * @param deduplicators
    *   the deduplicating functions
+   * @param conv
+   *   A valid FileConverter. Usually fileConverter.value, in Task scope
    * @return
    *   the (possibly) deduplicated mappings
    */
@@ -631,6 +633,8 @@ object SbtWeb extends AutoPlugin {
    *   the mappings to sync.
    * @param target
    *   the destination directory to sync to.
+   * @param conv
+   *   a valid FileConverter. Usually fileConverter.value, in Task scope
    * @return
    *   the target value
    */
