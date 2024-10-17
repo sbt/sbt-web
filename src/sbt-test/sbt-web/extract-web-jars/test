@@ -4,7 +4,6 @@
 
 # Extract node modules
 > Assets/webNodeModules
-$ exists target/web/node-modules/main/webjars/less/package.json
 > fileCheckNode
 
 > clean

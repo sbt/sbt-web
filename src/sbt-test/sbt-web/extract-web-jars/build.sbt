@@ -38,8 +38,8 @@ TaskKey[Unit]("fileCheckNode") := {
 //$ newer target/foo target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("checkJqueryTimestamp") := {
   assert(
-    ( target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js" ).exists(),
-    "Could not find jquery"
+    (baseDirectory.value / "target" / "foo" ).lastModified() > (target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js" ).lastModified(),
+    "target/foo was not newer than jquery.js"
   )
 }
 
