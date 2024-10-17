@@ -4,11 +4,11 @@ import java.nio.file.{ Path => NioPath }
 import java.io.{ File => IoFile }
 import sbt.*
 import sbt.Keys.Classpath
-import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFile }
+import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFileRef }
 
 private[sbt] object PluginCompat:
   type FileRef = HashedVirtualFileRef
-  type Out = VirtualFile
+  type UnhashedFileRef = VirtualFileRef
 
   def toNioPath(a: Attributed[HashedVirtualFileRef])(using conv: FileConverter): NioPath =
     conv.toPath(a.data)
@@ -22,9 +22,9 @@ private[sbt] object PluginCompat:
   inline def classpathToFiles(classpath: Classpath)(using conv: FileConverter): Seq[File] =
     toFiles(classpath.to(Seq))
   inline def toKey(settingKey: SettingKey[String]): StringAttributeKey = StringAttributeKey(settingKey.key.label)
-  def toNioPath(hvf: HashedVirtualFileRef)(using conv: FileConverter): NioPath =
+  def toNioPath(hvf: VirtualFileRef)(using conv: FileConverter): NioPath =
     conv.toPath(hvf)
-  def toFile(hvf: HashedVirtualFileRef)(using conv: FileConverter): File =
+  def toFile(hvf: VirtualFileRef)(using conv: FileConverter): File =
     toNioPath(hvf).toFile
   inline def toFileRef(file: File)(using conv: FileConverter): FileRef =
     conv.toVirtualFile(file.toPath)

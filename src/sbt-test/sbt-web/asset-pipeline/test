@@ -1,3 +1,2 @@
 > webStage
-$ exists target/web/stage/js/all.min.js
-$ exists target/web/stage/coffee/a.coffee
+> fileCheck

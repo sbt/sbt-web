@@ -586,6 +586,20 @@ object SbtWeb extends AutoPlugin {
   }
 
   /**
+   * Convert a FileRef to a File, for compatibility usage in user sbt files/tasks
+   * @param fileRef
+   *   The file ref to convert
+   * @param conv
+   *   A valid FileConverter. Usually fileConverter.value, in Task scope
+   * @return
+   *   The file converted to a usable File type.
+   */
+  def asFile(fileRef: UnhashedFileRef, conv: FileConverter): File = {
+    implicit val fc: FileConverter = conv
+    toFile(fileRef)
+  }
+
+  /**
    * Deduplicator that selects the first file contained in the base directory.
    *
    * @param base
