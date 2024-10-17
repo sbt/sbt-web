@@ -1,12 +1,11 @@
 # Extract everything
 > assets
-$ exists target/web/public/main/lib/jquery/jquery.js
-$ exists target/web/public/main/lib/prototype/prototype.js
--$ exists target/web/public/main/lib/requirejs/require.js
+> fileCheckAssets
 
 # Extract node modules
 > Assets/webNodeModules
 $ exists target/web/node-modules/main/webjars/less/package.json
+> fileCheckNode
 
 > clean
 
@@ -19,7 +18,7 @@ $ touch target/foo
 $ sleep 1000
 > assets
 # jquery.js should not have been re-extracted, assert that it is older
-$ newer target/foo target/web/public/main/lib/jquery/jquery.js
+> checkJqueryTimestamp
 
 > clean
 
@@ -27,11 +26,7 @@ $ newer target/foo target/web/public/main/lib/jquery/jquery.js
 > TestAssets/assets
 
 # All webjars on test classpath are extracted for tests
-$ exists target/web/web-modules/test/webjars/lib/requirejs/require.js
-$ exists target/web/web-modules/test/webjars/lib/jquery/jquery.js
-$ exists target/web/web-modules/test/webjars/lib/prototype/prototype.js
+> checkTestAssets
 
 # Now check everything was aggregated in test assets
-$ exists target/web/public/test/lib/jquery/jquery.js
-$ exists target/web/public/test/lib/prototype/prototype.js
-$ exists target/web/public/test/lib/requirejs/require.js
+> checkTestLibs
