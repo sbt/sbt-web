@@ -31,7 +31,7 @@ jsmin := {
     val minFile = targetDir / "js" / "all.min.js"
     IO.touch(minFile)
     val minMappings = Seq(minFile) pair Path.relativeTo(targetDir)
-    val convertedMinMappings = minMappings.map{ case (file, path) =>
+    val convertedMinMappings = minMappings.map { case (file, path) =>
       SbtWeb.asFileRef(file, fileConverter.value) -> path
     }
     convertedMinMappings ++ other

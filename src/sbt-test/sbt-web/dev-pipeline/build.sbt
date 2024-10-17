@@ -25,6 +25,12 @@ jsTransform := {
 Assets / pipelineStages := Seq(jsTransform)
 
 TaskKey[Unit]("fileCheck") := {
-  assert(!( target.value / "web" / "public" / "main" / "js" / "a.js" ).exists(), "Found 'web/public/main/js/a.js', which should not exist.")
-  assert(( target.value / "web" / "public" / "main" / "js" / "a.new.js" ).exists(), "Could not find 'web/public/main/js/a.new.js'")
+  assert(
+    !(target.value / "web" / "public" / "main" / "js" / "a.js").exists(),
+    "Found 'web/public/main/js/a.js', which should not exist."
+  )
+  assert(
+    (target.value / "web" / "public" / "main" / "js" / "a.new.js").exists(),
+    "Could not find 'web/public/main/js/a.new.js'"
+  )
 }

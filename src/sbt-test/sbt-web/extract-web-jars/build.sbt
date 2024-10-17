@@ -12,15 +12,15 @@ libraryDependencies ++= Seq(
 //-$ exists target/web/public/main/lib/requirejs/require.js
 TaskKey[Unit]("fileCheckAssets") := {
   assert(
-    ( target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js" ).exists(),
+    (target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js").exists(),
     "Could not find jquery.js"
   )
   assert(
-    ( target.value / "web" / "public" / "main" / "lib" / "prototype" / "prototype.js" ).exists(),
+    (target.value / "web" / "public" / "main" / "lib" / "prototype" / "prototype.js").exists(),
     "Could not find prototype.js"
   )
   assert(
-    !( target.value / "web" / "public" / "main" / "lib" / "requirejs" / "require.js" ).exists(),
+    !(target.value / "web" / "public" / "main" / "lib" / "requirejs" / "require.js").exists(),
     "Found requirejs, which should have been excluded."
   )
 
@@ -29,7 +29,7 @@ TaskKey[Unit]("fileCheckAssets") := {
 //$ exists target/web/node-modules/main/webjars/less/package.json
 TaskKey[Unit]("fileCheckNode") := {
   assert(
-    ( target.value / "web" / "node-modules" / "main" / "webjars" / "less" / "package.json" ).exists(),
+    (target.value / "web" / "node-modules" / "main" / "webjars" / "less" / "package.json").exists(),
     "Could not find node webjars"
   )
 }
@@ -38,7 +38,8 @@ TaskKey[Unit]("fileCheckNode") := {
 //$ newer target/foo target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("checkJqueryTimestamp") := {
   assert(
-    (baseDirectory.value / "target" / "foo" ).lastModified() > (target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js" ).lastModified(),
+    (baseDirectory.value / "target" / "foo")
+      .lastModified() > (target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js").lastModified(),
     "target/foo was not newer than jquery.js"
   )
 }
@@ -49,15 +50,15 @@ TaskKey[Unit]("checkJqueryTimestamp") := {
 //$ exists target/web/web-modules/test/webjars/lib/prototype/prototype.js
 TaskKey[Unit]("checkTestAssets") := {
   assert(
-    ( target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "requirejs" / "require.js" ).exists(),
+    (target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "requirejs" / "require.js").exists(),
     "Could not find requirejs webjars in test"
   )
   assert(
-    ( target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "jquery" / "jquery.js" ).exists(),
+    (target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "jquery" / "jquery.js").exists(),
     "Could not find jquery webjars in test"
   )
   assert(
-    ( target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "prototype" / "prototype.js" ).exists(),
+    (target.value / "web" / "web-modules" / "test" / "webjars" / "lib" / "prototype" / "prototype.js").exists(),
     "Could not find prototype webjars in test"
   )
 }
@@ -68,15 +69,15 @@ TaskKey[Unit]("checkTestAssets") := {
 //$ exists target/web/public/test/lib/requirejs/require.js
 TaskKey[Unit]("checkTestLibs") := {
   assert(
-    ( target.value / "web" / "public" / "test" / "lib" / "requirejs" / "require.js" ).exists(),
+    (target.value / "web" / "public" / "test" / "lib" / "requirejs" / "require.js").exists(),
     "Could not find requirejs library in test"
   )
   assert(
-    ( target.value / "web" / "public" / "test" / "lib" / "jquery" / "jquery.js" ).exists(),
+    (target.value / "web" / "public" / "test" / "lib" / "jquery" / "jquery.js").exists(),
     "Could not find jquery library in test"
   )
   assert(
-    ( target.value / "web" / "public" / "test" / "lib" / "prototype" / "prototype.js" ).exists(),
+    (target.value / "web" / "public" / "test" / "lib" / "prototype" / "prototype.js").exists(),
     "Could not find prototype library in test"
   )
 }
