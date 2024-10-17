@@ -16,10 +16,15 @@ jsTransform := {
       val newPath = path.dropRight(3) + ".new.js"
       val newFile = targetDir / newPath
       IO.touch(newFile)
-      newFile -> newPath
+      SbtWeb.asFileRef(newFile, fileConverter.value) -> newPath
     }
     transformedMappings ++ otherMappings
   }
 }
 
 Assets / pipelineStages := Seq(jsTransform)
+
+TaskKey[Unit]("fileCheck") := {
+  assert(!( target.value / "web" / "public" / "main" / "js" / "a.js" ).exists(), "Found 'web/public/main/js/a.js', which should not exist.")
+  assert(( target.value / "web" / "public" / "main" / "js" / "a.new.js" ).exists(), "Could not find 'web/public/main/js/a.new.js'")
+}

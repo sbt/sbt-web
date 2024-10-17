@@ -31,8 +31,16 @@ jsmin := {
     val minFile = targetDir / "js" / "all.min.js"
     IO.touch(minFile)
     val minMappings = Seq(minFile) pair Path.relativeTo(targetDir)
-    minMappings ++ other
+    val convertedMinMappings = minMappings.map{ case (file, path) =>
+      SbtWeb.asFileRef(file, fileConverter.value) -> path
+    }
+    convertedMinMappings ++ other
   }
 }
 
 pipelineStages := Seq(jsmin)
+
+TaskKey[Unit]("fileCheck") := {
+  assert((target.value / "jsmin" / "public" / "js" / "all.min.js").exists())
+  assert((target.value / "web" / "stage" / "coffee" / "a.coffee").exists())
+}
