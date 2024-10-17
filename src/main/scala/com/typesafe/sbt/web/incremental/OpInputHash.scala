@@ -42,6 +42,6 @@ object OpInputHasher {
    * Construct an OpInputHash that uses the given hashing logic.
    */
   def apply[Op](f: Op => OpInputHash): OpInputHasher[Op] = new OpInputHasher[Op] {
-    def hash(op: Op) = f(op)
+    def hash(op: Op): OpInputHash = f(op)
   }
 }

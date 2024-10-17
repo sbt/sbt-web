@@ -8,17 +8,17 @@ val coffee = taskKey[Seq[File]]("mock coffeescript processing")
 
 coffee := {
   // translate .coffee files into .js files
-  val sourceDir = (sourceDirectory in Assets).value
+  val sourceDir = (Assets / sourceDirectory).value
   val targetDir = target.value / "cs-plugin"
   val sources = sourceDir ** "*.coffee"
   val mappings = sources pair Path.relativeTo(sourceDir)
   val renamed = mappings map { case (file, path) => file -> path.replaceAll("coffee", "js") }
-  val copies = renamed map { case (file, path) => file -> (resourceManaged in Assets).value / path }
+  val copies = renamed map { case (file, path) => file -> (Assets / resourceManaged).value / path }
   IO.copy(copies)
   copies map (_._2)
 }
 
-sourceGenerators in Assets += coffee.taskValue
+Assets / sourceGenerators += coffee.taskValue
 
 val jsmin = taskKey[Pipeline.Stage]("mock js minifier")
 

@@ -31,17 +31,18 @@ private[incremental] object OpCacheIO {
  */
 private[incremental] object OpCacheProtocol {
 
-  import sjsonnew._
-  import BasicJsonProtocol._
+  import sjsonnew.*
+  import BasicJsonProtocol.*
 
   import OpCache.{ FileHash, Record }
 
-  implicit val fileFormat: JsonFormat[File] = projectFormat[File, String](_.getAbsolutePath, new File(_))
-  implicit val bytesFormat: JsonFormat[Bytes] = projectFormat[Bytes, String](
+  implicit val fileFormat: JsonFormat[File] =
+    BasicJsonProtocol.projectFormat[File, String](_.getAbsolutePath, new File(_))
+  implicit val bytesFormat: JsonFormat[Bytes] = BasicJsonProtocol.projectFormat[Bytes, String](
     bytes => Base64.getEncoder.encodeToString(bytes.arr),
     bytes => new Bytes(Base64.getDecoder.decode(bytes))
   )
-  implicit val opInputHashKeyFormat = JsonKeyFormat[OpInputHash](
+  implicit val opInputHashKeyFormat: JsonKeyFormat[OpInputHash] = JsonKeyFormat[OpInputHash](
     hash => Base64.getEncoder.encodeToString(hash.bytes.arr),
     hashBytes => OpInputHash(Bytes(Base64.getDecoder.decode(hashBytes)))
   )
@@ -87,6 +88,6 @@ private[incremental] object OpCacheProtocol {
   }
 
   implicit val opCacheFormat: JsonFormat[OpCache] = {
-    projectFormat[OpCache, Map[OpInputHash, Record]](_.content, new OpCache(_))
+    BasicJsonProtocol.projectFormat[OpCache, Map[OpInputHash, Record]](_.content, new OpCache(_))
   }
 }

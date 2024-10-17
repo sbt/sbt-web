@@ -4,9 +4,9 @@ import WebKeys._
 
 lazy val root = (project in file(".")).enablePlugins(SbtWeb)
 
-val transform = taskKey[Pipeline.Stage]("js transformer")
+val jsTransform = taskKey[Pipeline.Stage]("js transformer")
 
-transform := {
+jsTransform := {
   val targetDir = target.value / "transform"
 
   { (mappings: Seq[PathMapping]) =>
@@ -22,4 +22,4 @@ transform := {
   }
 }
 
-pipelineStages in Assets := Seq(transform)
+Assets / pipelineStages := Seq(jsTransform)

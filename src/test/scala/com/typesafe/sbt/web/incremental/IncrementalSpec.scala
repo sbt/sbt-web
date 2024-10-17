@@ -269,7 +269,8 @@ class IncrementalSpec extends Specification {
         IO.write(file2, "x")
 
         var hashPrefix = ""
-        implicit val hasher = OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
+        implicit val hasher: OpInputHasher[String] =
+          OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
 
         // Cache ops with an initial hash prefix
 
@@ -580,7 +581,8 @@ class IncrementalSpec extends Specification {
         IO.write(file2, "x")
 
         var hashPrefix = ""
-        implicit val hasher = OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
+        implicit val hasher: OpInputHasher[String] =
+          OpInputHasher[String](op => OpInputHash.hashString(hashPrefix + op))
 
         // Cache ops with an initial hash prefix
 
@@ -641,7 +643,7 @@ class IncrementalSpec extends Specification {
               "op1" -> OpSuccess(Set.empty, Set(file1)),
               "op2" -> OpSuccess(Set.empty, Set(file2))
             ),
-            Unit
+            ()
           )
         }
         val (outputFiles, _) = syncIncremental(tmpDir, List("op1")) { prunedOps =>
@@ -673,7 +675,7 @@ class IncrementalSpec extends Specification {
             Map[String, OpResult](
               "op1" -> OpSuccess(Set(infile), Set(file1, file2))
             ),
-            Unit
+            ()
           )
         }
 
@@ -709,7 +711,7 @@ class IncrementalSpec extends Specification {
               "op1" -> OpSuccess(Set(infile), Set(file1)),
               "op2" -> OpSuccess(Set.empty, Set(file2))
             ),
-            Unit
+            ()
           )
         }
 
@@ -721,7 +723,7 @@ class IncrementalSpec extends Specification {
               "op1" -> OpSuccess(Set(infile), Set.empty),
               "op3" -> OpSuccess(Set.empty, Set(file1, file2))
             ),
-            Unit
+            ()
           )
         }
 
