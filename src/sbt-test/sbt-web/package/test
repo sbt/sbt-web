@@ -1,14 +1,15 @@
-> web-assets:package
-$ exists target/web-project-0.1-web-assets.jar
+> compile
+> Assets/compile
+> Assets/package
+#> Web-assets / package
+> fileCheckAssets
 
 > extractAssets
-$ exists extracted/js/a.js
-$ exists extracted/lib/jquery/jquery.js
+> fileCheckExtracted
 
 > 'set Assets / WebKeys.packagePrefix := "public/"'
-> web-assets:package
+> Assets/package
 
 $ delete extracted
 > extractAssets
-$ exists extracted/public/js/a.js
-$ exists extracted/public/lib/jquery/jquery.js
+> fileCheckPublic
