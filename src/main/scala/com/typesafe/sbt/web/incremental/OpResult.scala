@@ -20,4 +20,4 @@ final case class OpSuccess(filesRead: Set[File], filesWritten: Set[File]) extend
 /**
  * An operation that failed.
  */
-final case object OpFailure extends OpResult
+case object OpFailure extends OpResult

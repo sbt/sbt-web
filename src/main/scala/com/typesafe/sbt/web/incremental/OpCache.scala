@@ -3,16 +3,16 @@
  */
 package com.typesafe.sbt.web.incremental
 
+import com.typesafe.sbt.PluginCompat.toSet
 import java.io.File
 import sbt.Hash
-import scala.collection.immutable.Set
 
 /**
  * Cache for recording which operations have successfully completed. Associates a hash of the operations' inputs
  * (OpInputHash) with a record of the files that were accessed by the operation.
  */
 private[incremental] class OpCache(var content: Map[OpInputHash, OpCache.Record] = Map.empty) {
-  import OpCache._
+  import OpCache.*
   def allOpInputHashes: Set[OpInputHash] = content.keySet
   def contains(oih: OpInputHash): Boolean = {
     content.contains(oih)
@@ -20,10 +20,10 @@ private[incremental] class OpCache(var content: Map[OpInputHash, OpCache.Record]
   def getRecord(oih: OpInputHash): Option[Record] = {
     content.get(oih)
   }
-  def putRecord(oih: OpInputHash, record: Record) = {
+  def putRecord(oih: OpInputHash, record: Record): Unit = {
     content = content + ((oih, record))
   }
-  def removeRecord(oih: OpInputHash) = {
+  def removeRecord(oih: OpInputHash): Unit = {
     content = content - oih
   }
 }
@@ -74,7 +74,7 @@ private[incremental] object OpCache {
    * Remove all operations from the cache that aren't in the given set of operations.
    */
   def vacuumExcept[Op](cache: OpCache, opsToKeep: Seq[Op])(implicit opInputHasher: OpInputHasher[Op]): Unit = {
-    val oihSet: Set[OpInputHash] = opsToKeep.map(opInputHasher.hash).to[Set]
+    val oihSet: Set[OpInputHash] = toSet(opsToKeep.map(opInputHasher.hash))
     for (oih <- cache.allOpInputHashes) yield {
       if (!oihSet.contains(oih)) {
         cache.removeRecord(oih)
@@ -129,6 +129,6 @@ private[incremental] object OpCache {
     ops.flatMap { op =>
       val record = cache.getRecord(opInputHasher.hash(op))
       record.fold(Set.empty[File])(_.products)
-    }.toSet
+    }
   }
 }

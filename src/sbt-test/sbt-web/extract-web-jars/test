@@ -5,7 +5,7 @@ $ exists target/web/public/main/lib/prototype/prototype.js
 -$ exists target/web/public/main/lib/requirejs/require.js
 
 # Extract node modules
-> web-assets:webNodeModules
+> Assets/webNodeModules
 $ exists target/web/node-modules/main/webjars/less/package.json
 
 > clean
@@ -24,7 +24,7 @@ $ newer target/foo target/web/public/main/lib/jquery/jquery.js
 > clean
 
 # Test assets
-> web-assets-test:assets
+> TestAssets/assets
 
 # All webjars on test classpath are extracted for tests
 $ exists target/web/web-modules/test/webjars/lib/requirejs/require.js

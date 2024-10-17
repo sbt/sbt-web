@@ -1,15 +1,18 @@
 package com.typesafe.sbt.web
 
-import sbt._
+import sbt.{ Def, given, * }
 import sbt.internal.inc.Analysis
 import sbt.internal.io.Source
-import sbt.Keys._
+import sbt.Keys.*
 import sbt.Defaults.relativeMappings
+import scala.language.implicitConversions
 import org.webjars.WebJarExtractor
 import org.webjars.WebJarAssetLocator.WEBJARS_PATH_PREFIX
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess }
-import xsbti.Reporter
+import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess, toStringInputHasher }
+import xsbti.{ Reporter, FileConverter }
+
+import com.typesafe.sbt.PluginCompat.*
 
 object Import {
 
@@ -125,16 +128,16 @@ object Import {
  * {{{
  *   + src
  *   --+ main
- *   ----+ assets .....(sourceDirectory in Assets)
+ *   ----+ assets .....(Assets / sourceDirectory)
  *   ------+ js
- *   ----+ public .....(resourceDirectory in Assets)
+ *   ----+ public .....(Assets / resourceDirectory)
  *   ------+ css
  *   ------+ images
  *   ------+ js
  *   --+ test
- *   ----+ assets .....(sourceDirectory in TestAssets)
+ *   ----+ assets .....(TestAssets / sourceDirectory)
  *   ------+ js
- *   ----+ public .....(resourceDirectory in TestAssets)
+ *   ----+ public .....(TestAssets / resourceDirectory)
  *   ------+ css
  *   ------+ images
  *   ------+ js
@@ -178,12 +181,13 @@ object SbtWeb extends AutoPlugin {
 
   override def requires = sbt.plugins.JvmPlugin
 
-  import autoImport._
-  import WebKeys._
+  import autoImport.*
+  import WebKeys.*
 
-  override def projectConfigurations = super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
+  override def projectConfigurations: Seq[Configuration] =
+    super.projectConfigurations ++ Seq(Assets, TestAssets, Plugin)
 
-  override def buildSettings: Seq[Def.Setting[_]] = Seq(
+  override def buildSettings: Seq[Def.Setting[?]] = Seq(
     (Plugin / nodeModuleDirectory) := (Plugin / target).value / "node-modules",
     (Plugin / nodeModules / webJarsCache) := (Plugin / target).value / "webjars-plugin.cache",
     (Plugin / webJarsClassLoader) := SbtWeb.getClass.getClassLoader,
@@ -199,7 +203,7 @@ object SbtWeb extends AutoPlugin {
     )
   ) ++ inConfig(Plugin)(nodeModulesSettings)
 
-  override def projectSettings: Seq[Setting[_]] = Seq(
+  override def projectSettings: Seq[Setting[?]] = Seq(
     reporter := new CompileProblems.LoggerReporter(5, streams.value.log),
     webTarget := target.value / "web",
     (Assets / sourceDirectory) := (Compile / sourceDirectory).value / "assets",
@@ -230,8 +234,8 @@ object SbtWeb extends AutoPlugin {
     (TestAssets / webJars / webJarsCache) := webTarget.value / "web-modules" / "webjars-test.cache",
     (Assets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-main.cache",
     (TestAssets / nodeModules / webJarsCache) := webTarget.value / "node-modules" / "webjars-test.cache",
-    (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value),
-    (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value),
+    (Assets / webJarsClassLoader) := classLoader((Compile / dependencyClasspath).value, fileConverter.value),
+    (TestAssets / webJarsClassLoader) := classLoader((Test / dependencyClasspath).value, fileConverter.value),
     assets := (Assets / assets).value,
     (Compile / packageBin / mappings) ++= {
       if ((Assets / addExportedMappingsToPackageBinMappings).value) {
@@ -266,19 +270,20 @@ object SbtWeb extends AutoPlugin {
     allPipelineStages := Pipeline.chain(pipelineStages).value,
     pipeline := allPipelineStages.value((Assets / mappings).value),
     deduplicators := Nil,
-    pipeline := deduplicateMappings(pipeline.value, deduplicators.value),
+    pipeline := deduplicateMappings(pipeline.value, deduplicators.value, fileConverter.value),
     stagingDirectory := webTarget.value / "stage",
     stage := syncMappings(
       streams.value.cacheStoreFactory.make("sync-stage"),
       pipeline.value,
-      stagingDirectory.value
+      stagingDirectory.value,
+      fileConverter.value
     )
   ) ++
     inConfig(Assets)(unscopedAssetSettings) ++ inConfig(Assets)(nodeModulesSettings) ++
     inConfig(TestAssets)(unscopedAssetSettings) ++ inConfig(TestAssets)(nodeModulesSettings) ++
     packageSettings
 
-  val unscopedAssetSettings: Seq[Setting[_]] = Seq(
+  val unscopedAssetSettings: Seq[Setting[?]] = Seq(
     includeFilter := GlobFilter("*"),
     sourceGenerators := Nil,
     managedSourceDirectories := Nil,
@@ -286,7 +291,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
     unmanagedSources := unmanagedSourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get,
+      .get(),
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
     (sources / mappings) := relativeMappings(sources, sourceDirectories).value,
@@ -296,7 +301,7 @@ object SbtWeb extends AutoPlugin {
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
     unmanagedResources := unmanagedResourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get,
+      .get(),
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
     (resources / mappings) := relativeMappings(resources, resourceDirectories).value,
@@ -323,11 +328,12 @@ object SbtWeb extends AutoPlugin {
     allPipelineStages := Pipeline.chain(pipelineStages).value,
     mappings := allPipelineStages.value(mappings.value),
     deduplicators := Nil,
-    mappings := deduplicateMappings(mappings.value, deduplicators.value),
+    mappings := deduplicateMappings(mappings.value, deduplicators.value, fileConverter.value),
     assets := syncMappings(
       streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
       mappings.value,
-      public.value
+      public.value,
+      fileConverter.value
     ),
     exportedMappings := createWebJarMappings.value,
     addExportedMappingsToPackageBinMappings := true,
@@ -384,7 +390,8 @@ object SbtWeb extends AutoPlugin {
       syncMappings(
         streams.value.cacheStoreFactory.make("sync-exported-assets-" + configuration.value.name),
         exportedMappings.value,
-        syncTargetDir
+        syncTargetDir,
+        fileConverter.value
       )
     }
     else
@@ -395,11 +402,12 @@ object SbtWeb extends AutoPlugin {
    * Create package mappings for assets in the webjar format. Use the webjars path prefix and exclude all web module
    * assets.
    */
-  def createWebJarMappings: Def.Initialize[Task[Seq[(File, String)]]] = Def.task {
+  def createWebJarMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
     def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
+    implicit val fc: FileConverter = fileConverter.value
     mappings.value flatMap {
-      case (file, path) if webModule(file) => None
-      case (file, path)                    => Some(file -> (webJarsPathPrefix.value + path))
+      case (file, path) if webModule(toFile(file)) => None
+      case (file, path)                            => Some(file -> (webJarsPathPrefix.value + path))
     }
   }
 
@@ -427,7 +435,8 @@ object SbtWeb extends AutoPlugin {
     if (state.value.get(disableExportedProducts).getOrElse(false)) {
       Seq.empty
     } else {
-      Seq(Attributed.blank(exportTask.value).put(webModulesLib.key, moduleName.value))
+      implicit val fc: FileConverter = fileConverter.value
+      Seq(Attributed.blank(toFileRef(exportTask.value)).put(toKey(webModulesLib), moduleName.value))
     }
   }
 
@@ -441,7 +450,7 @@ object SbtWeb extends AutoPlugin {
   /**
    * Create package mappings for all assets, adding the optional prefix.
    */
-  def packageAssetsMappings = Def.task {
+  def packageAssetsMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
     val prefix = packagePrefix.value
     (Defaults.ConfigGlobal / pipeline).value map { case (file, path) =>
       file -> (prefix + path)
@@ -451,15 +460,15 @@ object SbtWeb extends AutoPlugin {
   /**
    * Get module names for all internal web module dependencies on the classpath.
    */
-  def getInternalWebModules(conf: Configuration) = Def.task {
-    (conf / internalDependencyClasspath).value.flatMap(_.get(WebKeys.webModulesLib.key))
+  def getInternalWebModules(conf: Configuration): Def.Initialize[Task[Seq[String]]] = Def.task {
+    (conf / internalDependencyClasspath).value.flatMap(_.get(toKey(WebKeys.webModulesLib)))
   }
 
   /**
    * Remove web module dependencies from a classpath. This is a helper method for Play 2.3 transitions.
    */
   def classpathWithoutAssets(classpath: Classpath): Classpath = {
-    classpath.filter(_.get(WebKeys.webModulesLib.key).isEmpty)
+    classpath.filter(_.get(toKey(WebKeys.webModulesLib)).isEmpty)
   }
 
   def flattenDirectWebModules = Def.task {
@@ -489,8 +498,10 @@ object SbtWeb extends AutoPlugin {
     prefixes.find(s.startsWith).fold(s)(s.stripPrefix)
   }
 
-  private def classLoader(classpath: Classpath): ClassLoader =
-    new java.net.URLClassLoader(Path.toURLs(classpath.files), null)
+  private def classLoader(classpath: Classpath, conv: FileConverter): ClassLoader = {
+    implicit val fc: FileConverter = conv
+    new java.net.URLClassLoader(Path.toURLs(classpathToFiles(classpath)), null)
+  }
 
   private def withWebJarExtractor(to: File, cacheFile: File, classLoader: ClassLoader)(
       block: (WebJarExtractor, File) => Unit
@@ -503,14 +514,14 @@ object SbtWeb extends AutoPlugin {
   private def generateNodeWebJars(target: File, cache: File, classLoader: ClassLoader): Seq[File] = {
     withWebJarExtractor(target, cache, classLoader) { (e, to) =>
       e.extractAllNodeModulesTo(to)
-    }.**(AllPassFilter).get
+    }.**(AllPassFilter).get()
   }
 
   private def generateWebJars(target: File, lib: String, cache: File, classLoader: ClassLoader): Seq[File] = {
     withWebJarExtractor(target / lib, cache, classLoader) { (e, to) =>
       e.extractAllWebJarsTo(to)
     }
-    target.**(AllPassFilter).get
+    target.**(AllPassFilter).get()
   }
 
   // Mapping deduplication
@@ -526,19 +537,26 @@ object SbtWeb extends AutoPlugin {
    *   the mappings to deduplicate
    * @param deduplicators
    *   the deduplicating functions
+   * @param conv
+   *   A valid FileConverter. Usually fileConverter.value, in Task scope
    * @return
    *   the (possibly) deduplicated mappings
    */
-  def deduplicateMappings(mappings: Seq[PathMapping], deduplicators: Seq[Deduplicator]): Seq[PathMapping] = {
+  def deduplicateMappings(
+      mappings: Seq[PathMapping],
+      deduplicators: Seq[Deduplicator],
+      conv: FileConverter
+  ): Seq[PathMapping] = {
+    implicit val fc: FileConverter = conv
     if (deduplicators.isEmpty) {
       mappings
     } else {
       mappings.groupBy(_._2 /*path*/ ).toSeq flatMap { grouped =>
         val (path, group) = grouped
         if (group.size > 1) {
-          val files = group.map(_._1)
+          val files = group.map(mapping => toFile(mapping._1))
           val deduplicated = firstResult(deduplicators)(files)
-          deduplicated.fold(group)(file => Seq((file, path)))
+          deduplicated.fold(group)(file => Seq((toFileRef(file), path)))
         } else {
           group
         }
@@ -551,6 +569,20 @@ object SbtWeb extends AutoPlugin {
    */
   private def firstResult[A, B](fs: Seq[A => Option[B]])(a: A): Option[B] = {
     (fs.toStream flatMap { f => f(a).toSeq }).headOption
+  }
+
+  /**
+   * Convert a file to a FileRef, for compatibility usage in user sbt files/tasks
+   * @param file
+   *   The file to convert
+   * @param conv
+   *   A valid FileConverter. Usually fileConverter.value, in Task scope
+   * @return
+   *   The file converted to the cross-buildable FileRef type.
+   */
+  def asFileRef(file: File, conv: FileConverter): FileRef = {
+    implicit val fc: FileConverter = conv
+    toFileRef(file)
   }
 
   /**
@@ -601,12 +633,20 @@ object SbtWeb extends AutoPlugin {
    *   the mappings to sync.
    * @param target
    *   the destination directory to sync to.
+   * @param conv
+   *   a valid FileConverter. Usually fileConverter.value, in Task scope
    * @return
    *   the target value
    */
-  def syncMappings(cacheStore: sbt.util.CacheStore, mappings: Seq[PathMapping], target: File): File = {
+  def syncMappings(
+      cacheStore: sbt.util.CacheStore,
+      mappings: Seq[PathMapping],
+      target: File,
+      conv: FileConverter
+  ): File = {
+    implicit val fc: FileConverter = conv
     val copies = mappings map { case (file, path) =>
-      file -> (target / path)
+      toFile(file) -> (target / path)
     }
     Sync.sync(cacheStore)(copies)
     target

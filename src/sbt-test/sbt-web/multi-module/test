@@ -71,7 +71,7 @@ $ exists modules/e/target/web/public/test/lib/jquery/jquery.js
 
 # Let's optimize the syncing
 
-> set trackInternalDependencies in ThisBuild := TrackLevel.TrackIfMissing
+> set ThisBuild / trackInternalDependencies := TrackLevel.TrackIfMissing
 
 > a/assets
 

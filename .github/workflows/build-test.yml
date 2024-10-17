@@ -20,7 +20,7 @@ jobs:
       java: 17, 11, 8
       scala: 2.12.20
       cmd: |
-        sbt ++$MATRIX_SCALA test ^scripted
+        sbt ++$MATRIX_SCALA test scripted
 
   finish:
     name: Finish
