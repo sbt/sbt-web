@@ -1,7 +1,4 @@
-> compile
-> Assets/compile
 > Assets/package
-#> Web-assets / package
 > fileCheckAssets
 
 > extractAssets

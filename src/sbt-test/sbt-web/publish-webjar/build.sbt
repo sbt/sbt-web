@@ -1,3 +1,5 @@
+import FileAssertions.*
+
 lazy val a = (project in file("module/a"))
   .enablePlugins(SbtWeb)
   .settings(
@@ -21,3 +23,19 @@ lazy val c = (project in file("."))
   .settings(
     libraryDependencies += "com.github.sbt.web.test" %% "web-module-b" % "0.1-SNAPSHOT"
   )
+
+//$ exists target/web/web-modules/main/webjars/lib/jquery/jquery.js
+//$ exists target/web/web-modules/main/webjars/lib/web-module-a/js/a.js
+//$ exists target/web/web-modules/main/webjars/lib/web-module-b/js/b.js
+//
+//$ exists target/web/public/main/lib/jquery/jquery.js
+//$ exists target/web/public/main/lib/web-module-a/js/a.js
+//$ exists target/web/public/main/lib/web-module-b/js/b.js
+TaskKey[Unit]("fileCheck") := {
+  assertExists(target.value / "web" / "web-modules" / "main" / "webjars" / "lib" / "jquery" / "jquery.js")
+  assertExists(target.value / "web" / "web-modules" / "main" / "webjars" / "lib" / "web-module-a" / "js" / "a.js")
+  assertExists(target.value / "web" / "web-modules" / "main" / "webjars" / "lib" / "web-module-b" / "js" / "b.js")
+  assertExists(target.value / "web" / "public" / "main" / "lib" / "jquery" / "jquery.js")
+  assertExists(target.value / "web" / "public" / "main" / "lib" / "web-module-a" / "js" / "a.js")
+  assertExists(target.value / "web" / "public" / "main" / "lib" / "web-module-b" / "js" / "b.js")
+}
