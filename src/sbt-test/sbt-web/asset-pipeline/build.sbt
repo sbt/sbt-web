@@ -40,7 +40,9 @@ jsmin := {
 
 pipelineStages := Seq(jsmin)
 
+// $ exists target/web/stage/js/all.min.js
+// $ exists target/web/stage/coffee/a.coffee
 TaskKey[Unit]("fileCheck") := {
-  assert((target.value / "jsmin" / "public" / "js" / "all.min.js").exists())
+  assert((target.value / "web" / "stage" / "js" / "all.min.js").exists())
   assert((target.value / "web" / "stage" / "coffee" / "a.coffee").exists())
 }
