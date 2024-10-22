@@ -1,3 +1,2 @@
 > assets
-$ absent target/web/public/main/js/a.js
-$ exists target/web/public/main/js/a.new.js
+> fileCheck
