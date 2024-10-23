@@ -39,7 +39,7 @@ lazy val x = (project in file("modules/x"))
 //$ exists target/web/public/main/lib/e/js/e.js
 //$ exists target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckA") := {
-  assertLibrary(target.value, "a", Root)
+  assertLibrary(target.value, "a", Root())
   assertLibrary(target.value, "b")
   assertLibrary(target.value, "c")
   assertLibrary(target.value, "d")
@@ -53,20 +53,19 @@ TaskKey[Unit]("fileCheckA") := {
 //$ exists modules/b/target/web/public/main/lib/e/js/e.js
 //$ exists modules/b/target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckB") := {
-  assertLibrary((b / target).value , "b", Root)
+  assertLibrary((b / target).value , "b", Root())
   assertLibrary((b / target).value, "c")
   assertLibrary((b / target).value, "d")
   assertLibrary((b / target).value, "e")
   assertLibrary((b / target).value, "jquery", External())
 }
 
-//# c has set import directly
 //$ exists modules/c/target/web/public/main/js/c.js
 //$ exists modules/c/target/web/public/main/js/e.js
 //$ exists modules/c/target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckC") := {
-  assertLibrary((c / target).value, "c", Root)
-  assertLibrary((c / target).value, "e", Root)
+  assertLibrary((c / target).value, "c", Root())
+  assertLibrary((c / target).value, "e", Root())
   assertLibrary((c / target).value, "jquery", External())
 }
 
@@ -74,23 +73,18 @@ TaskKey[Unit]("fileCheckC") := {
 //$ exists modules/d/target/web/public/main/lib/e/js/e.js
 //$ exists modules/d/target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckD") := {
-  assertLibrary((d / target).value, "d", Root)
+  assertLibrary((d / target).value, "d", Root())
   assertLibrary((d / target).value, "e")
   assertLibrary((d / target).value, "jquery", External())
 }
-//> e/assets
-//
+
 //$ exists modules/e/target/web/public/main/js/e.js
 //$ exists modules/e/target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckE") := {
-  assertLibrary((e / target).value, "e", Root)
+  assertLibrary((e / target).value, "e", Root())
   assertLibrary((e / target).value, "jquery", External())
 }
-//> b/web-assets-test:assets
-//
-//# b has disabled direct modules so we expect lib/b here
-//$ exists modules/b/target/web/public/test/lib/b/js/b.js
-//
+
 //$ exists modules/b/target/web/public/test/lib/c/js/c.js
 //$ exists modules/b/target/web/public/test/lib/c/js/u.js
 //$ exists modules/b/target/web/public/test/lib/d/js/d.js
@@ -99,17 +93,16 @@ TaskKey[Unit]("fileCheckE") := {
 //$ exists modules/b/target/web/public/test/lib/e/js/t.js
 //$ exists modules/b/target/web/public/test/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckBTest") := {
-  assertLibrary((b / target).value, "b", TestLibrary)
-  assertLibrary((b / target).value, "c", TestLibrary)
-  assertLibrary((b / target).value, "c", TestLibrary, Some("u"))
-  assertLibrary((b / target).value, "d", TestLibrary)
-  assertLibrary((b / target).value, "d", TestLibrary, Some("u"))
-  assertLibrary((b / target).value, "e", TestLibrary)
-  assertLibrary((b / target).value, "e", TestLibrary, Some("t"))
+  assertLibrary((b / target).value, "b", Library("test"))
+  assertLibrary((b / target).value, "c", Library("test"))
+  assertLibrary((b / target).value, "c", Library("test"), Some("u"))
+  assertLibrary((b / target).value, "d", Library("test"))
+  assertLibrary((b / target).value, "d", Library("test"), Some("u"))
+  assertLibrary((b / target).value, "e", Library("test"))
+  assertLibrary((b / target).value, "e", Library("test"), Some("t"))
   assertLibrary((b / target).value, "jquery", External("test"))
 }
-//> c/web-assets-test:assets
-//
+
 //# c has set import directly
 //$ exists modules/c/target/web/public/test/js/c.js
 //$ exists modules/c/target/web/public/test/js/u.js
@@ -117,49 +110,40 @@ TaskKey[Unit]("fileCheckBTest") := {
 //$ exists modules/c/target/web/public/test/js/t.js
 //$ exists modules/c/target/web/public/test/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckCTest") := {
-  assertLibrary((c / target).value, "c", TestRoot)
-  assertLibrary((c / target).value, "c", TestRoot, Some("u"))
-  //assertLibrary((c / target).value, "e", TestRoot)
-  //assertLibrary((c / target).value, "e", TestRoot, Some("t"))
+  assertLibrary((c / target).value, "c", Root("test"))
+  assertLibrary((c / target).value, "c", Root("test"), Some("u"))
+  assertLibrary((c / target).value, "e", Root("test"))
+  assertLibrary((c / target).value, "e", Root("test"), Some("t"))
   assertLibrary((c / target).value, "jquery", External("test"))
 }
-//> d/web-assets-test:assets
-//
+
 //$ exists modules/d/target/web/public/test/js/d.js
 //$ exists modules/d/target/web/public/test/js/u.js
 //$ exists modules/d/target/web/public/test/lib/e/js/e.js
 //$ exists modules/d/target/web/public/test/lib/e/js/t.js
 //$ exists modules/d/target/web/public/test/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckDTest") := {
-  assertLibrary((d / target).value, "d", TestRoot)
-  assertLibrary((d / target).value, "d", TestRoot, Some("u"))
-  assertLibrary((d / target).value, "e", TestLibrary)
-  assertLibrary((d / target).value, "e", TestLibrary, Some("t"))
+  assertLibrary((d / target).value, "d", Root("test"))
+  assertLibrary((d / target).value, "d", Root("test"), Some("u"))
+  assertLibrary((d / target).value, "e", Library("test"))
+  assertLibrary((d / target).value, "e", Library("test"), Some("t"))
   assertLibrary((d / target).value, "jquery", External("test"))
 }
-//> e/web-assets-test:assets
-//
+
 //$ exists modules/e/target/web/public/test/js/e.js
 //$ exists modules/e/target/web/public/test/js/t.js
 //$ exists modules/e/target/web/public/test/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckETest") := {
-  assertLibrary((e / target).value, "e", TestRoot)
-  assertLibrary((e / target).value, "e", TestRoot, Some("t"))
+  assertLibrary((e / target).value, "e", Root("test"))
+  assertLibrary((e / target).value, "e", Root("test"), Some("t"))
   assertLibrary((e / target).value, "jquery", External("test"))
 }
-//# Let's optimize the syncing
-//
-//> set ThisBuild / trackInternalDependencies := TrackLevel.TrackIfMissing
-//
-//> a/assets
-//
+
 //$ exists target/web/public/main/lib/e/js/e.js
 TaskKey[Unit]("fileCheckATracked") := {
   assertLibrary(target.value, "e")
 }
-//> e/clean
-//> a/assets
-//
+
 //$ exists target/web/public/main/lib/e/js/e.js
 TaskKey[Unit]("fileCheckETracked") := {
   assertLibrary(target.value, "e")

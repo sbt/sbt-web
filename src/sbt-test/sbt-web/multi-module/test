@@ -12,7 +12,7 @@
 > fileCheckD
 
 > e/assets
-> fileCheckC
+> fileCheckE
 
 > b/TestAssets/assets
 # b has disabled direct modules so we expect lib/b here
