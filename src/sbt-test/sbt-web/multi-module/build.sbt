@@ -53,7 +53,7 @@ TaskKey[Unit]("fileCheckA") := {
 //$ exists modules/b/target/web/public/main/lib/e/js/e.js
 //$ exists modules/b/target/web/public/main/lib/jquery/jquery.js
 TaskKey[Unit]("fileCheckB") := {
-  assertLibrary((b / target).value , "b", Root())
+  assertLibrary((b / target).value, "b", Root())
   assertLibrary((b / target).value, "c")
   assertLibrary((b / target).value, "d")
   assertLibrary((b / target).value, "e")
