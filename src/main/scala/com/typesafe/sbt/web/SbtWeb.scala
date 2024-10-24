@@ -402,10 +402,11 @@ object SbtWeb extends AutoPlugin {
    * Create package mappings for assets in the webjar format. Use the webjars path prefix and exclude all web module
    * assets.
    */
-  def createWebJarMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
+  def createWebJarMappings: Def.Initialize[Task[Seq[PathMapping]]] = Def.task {
     def webModule(file: File) = webModuleDirectories.value.exists(dir => IO.relativize(dir, file).isDefined)
     implicit val fc: FileConverter = fileConverter.value
     mappings.value flatMap {
+      case mapping if !fileRefCompatible(mapping)  => None
       case (file, path) if webModule(toFile(file)) => None
       case (file, path)                            => Some(file -> (webJarsPathPrefix.value + path))
     }
@@ -450,10 +451,12 @@ object SbtWeb extends AutoPlugin {
   /**
    * Create package mappings for all assets, adding the optional prefix.
    */
-  def packageAssetsMappings: Def.Initialize[Task[Seq[(FileRef, String)]]] = Def.task {
+  def packageAssetsMappings: Def.Initialize[Task[Seq[PathMapping]]] = Def.task {
+    implicit val fc: FileConverter = fileConverter.value
     val prefix = packagePrefix.value
-    (Defaults.ConfigGlobal / pipeline).value map { case (file, path) =>
-      file -> (prefix + path)
+    (Defaults.ConfigGlobal / pipeline).value collect {
+      case (file, path) if fileRefCompatible((file, path)) =>
+        file -> (prefix + path)
     }
   }
 

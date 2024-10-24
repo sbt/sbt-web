@@ -5,6 +5,7 @@ import java.io.{ File => IoFile }
 import sbt.*
 import sbt.Keys.Classpath
 import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFileRef }
+import com.typesafe.sbt.web.PathMapping
 
 private[sbt] object PluginCompat:
   type FileRef = HashedVirtualFileRef
@@ -30,4 +31,6 @@ private[sbt] object PluginCompat:
     conv.toVirtualFile(file.toPath)
   inline def selectFirstPredicate(using conv: FileConverter): Seq[FileRef] => Boolean = files =>
     files.forall(toFile(_).isFile) && files.map(_.contentHashStr).distinct.size == 1
+  inline def fileRefCompatible(path: PathMapping)(using conv: FileConverter): Boolean =
+    !toFile(path._1).isDirectory
 end PluginCompat

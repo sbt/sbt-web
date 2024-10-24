@@ -2,6 +2,7 @@ package com.typesafe.sbt
 
 import sbt.*
 import sbt.Keys.Classpath
+import com.typesafe.sbt.web.PathMapping
 import xsbti.FileConverter
 
 import java.nio.file.{ Path => NioPath }
@@ -28,4 +29,5 @@ private[sbt] object PluginCompat {
   def toFileRef(f: File)(implicit conv: FileConverter): FileRef = f
   def selectFirstPredicate: Seq[FileRef] => Boolean = files =>
     files.forall(_.isFile) && files.map(_.hashString).distinct.size == 1
+  def fileRefCompatible(path: PathMapping)(implicit conv: FileConverter): Boolean = true
 }
