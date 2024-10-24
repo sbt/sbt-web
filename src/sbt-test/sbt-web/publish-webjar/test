@@ -4,10 +4,4 @@
 
 > assets
 
-$ exists target/web/web-modules/main/webjars/lib/jquery/jquery.js
-$ exists target/web/web-modules/main/webjars/lib/web-module-a/js/a.js
-$ exists target/web/web-modules/main/webjars/lib/web-module-b/js/b.js
-
-$ exists target/web/public/main/lib/jquery/jquery.js
-$ exists target/web/public/main/lib/web-module-a/js/a.js
-$ exists target/web/public/main/lib/web-module-b/js/b.js
+> fileCheck
