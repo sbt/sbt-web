@@ -19,12 +19,9 @@ import com.typesafe.sbt.PluginCompat.toSet
  * Here is how tasks interact with the API:
  *
  *   - Tasks call the API with a list of potential operations to perform and with a function to run operations.
- *
  *   - The API takes care of pruning the list of operations to find the incremental operations that need to be run.
- *
  *   - The API then calls the supplied function to run the pruned list of operations. This method returns a list of
  *     results, one for each operation.
- *
  *   - If an operation succeeds, the details are recorded so that the operation can be skipped in the future, if
  *     possible.
  *
