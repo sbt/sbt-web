@@ -1,7 +1,9 @@
 sbt-web
 =======
 
+[![sbt-web Scala version support](https://index.scala-lang.org/sbt/sbt-web/sbt-web/latest-by-scala-version.svg?platform=sbt1)](https://index.scala-lang.org/sbt/sbt-web/sbt-web)
 [![Build Status](https://github.com/sbt/sbt-web/actions/workflows/build-test.yml/badge.svg)](https://github.com/sbt/sbt-web/actions/workflows/build-test.yml)
+
 
 This project provides the building blocks for web oriented sbt plugins by bringing together the following concerns:
 
