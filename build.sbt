@@ -1,7 +1,5 @@
 lazy val `sbt-web` = (project in file(".")).enablePlugins(SbtWebBase)
 
-sonatypeProfileName := "com.github.sbt.sbt-web" // See https://issues.sonatype.org/browse/OSSRH-77819#comment-1203625
-
 description := "sbt web support"
 
 developers += Developer(
