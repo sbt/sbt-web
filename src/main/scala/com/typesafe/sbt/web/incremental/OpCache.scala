@@ -62,7 +62,7 @@ private[incremental] object OpCache {
    */
   def anyFileChanged(fileHashes: Set[FileHash]): Boolean = {
     fileHashes.foldLeft(false)({
-      case (true, _) => true // We've already found a changed file, no need to check other files
+      case (true, _)                => true // We've already found a changed file, no need to check other files
       case (false, recordedContent) =>
         val currentContent = OpCache.fileHash(recordedContent.file)
         val fileChanged = currentContent != recordedContent
