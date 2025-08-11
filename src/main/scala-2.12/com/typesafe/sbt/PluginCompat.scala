@@ -10,6 +10,10 @@ import java.nio.file.{ Path => NioPath }
 private[sbt] object PluginCompat {
   type FileRef = java.io.File
   type UnhashedFileRef = java.io.File
+  
+  class cacheLevel(include: Array[Any]) extends annotation.StaticAnnotation
+  def uncached[T](value: T): T = value 
+  val TestResultPassed = ()
 
   def toNioPath(a: Attributed[File])(implicit conv: FileConverter): NioPath =
     a.data.toPath

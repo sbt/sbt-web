@@ -12,7 +12,7 @@ import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess, toStringInputHasher }
 import xsbti.{ Reporter, FileConverter }
 
-import com.typesafe.sbt.PluginCompat.*
+import com.typesafe.sbt.PluginCompat.{*, given}
 
 object Import {
 
@@ -27,8 +27,9 @@ object Import {
 
     val public = SettingKey[File]("web-public", "The location of files intended for publishing to the web.")
     val webTarget = SettingKey[File]("assets-target", "The target directory for assets")
-
+    @cacheLevel(include = Array.empty)
     val jsFilter = SettingKey[FileFilter]("web-js-filter", "The file extension of js files.")
+    @cacheLevel(include = Array.empty)
     val reporter = TaskKey[Reporter]("web-reporter", "The reporter to use for conveying processing results.")
 
     val nodeModuleDirectory =
@@ -68,9 +69,11 @@ object Import {
 
     val webJarsDirectory = SettingKey[File]("web-jars-directory", "The path to extract WebJars to")
     val webJarsCache = SettingKey[File]("web-jars-cache", "The path for the webjars extraction cache file")
+    @cacheLevel(include = Array.empty)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
     val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
 
+    @cacheLevel(include = Array.empty)
     val deduplicators =
       TaskKey[Seq[Deduplicator]]("web-deduplicators", "Functions that select from duplicate asset mappings")
 
@@ -92,9 +95,10 @@ object Import {
       "web-exported-directory-no-tracking",
       "Directory with assets in WebJar format, but no tracking from a tracking perspective."
     )
-
+    @cacheLevel(include = Array.empty)
     val allPipelineStages =
       TaskKey[Pipeline.Stage]("web-all-pipeline-stages", "All asset pipeline stages chained together.")
+    @cacheLevel(include = Array.empty)
     val pipeline = TaskKey[Seq[PathMapping]]("web-pipeline", "Run all stages of the asset pipeline.")
 
     val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix when packaging all assets.")
@@ -190,7 +194,7 @@ object SbtWeb extends AutoPlugin {
   override def buildSettings: Seq[Def.Setting[?]] = Seq(
     (Plugin / nodeModuleDirectory) := (Plugin / target).value / "node-modules",
     (Plugin / nodeModules / webJarsCache) := (Plugin / target).value / "webjars-plugin.cache",
-    (Plugin / webJarsClassLoader) := SbtWeb.getClass.getClassLoader,
+    (Plugin / webJarsClassLoader) := uncached(SbtWeb.getClass.getClassLoader),
     (Plugin / baseDirectory) := (LocalRootProject / baseDirectory).value / "project",
     (Plugin / target) := (Plugin / baseDirectory).value / "target",
     (Plugin / crossTarget) := Defaults.makeCrossTarget(
@@ -204,7 +208,7 @@ object SbtWeb extends AutoPlugin {
   ) ++ inConfig(Plugin)(nodeModulesSettings)
 
   override def projectSettings: Seq[Setting[?]] = Seq(
-    reporter := new CompileProblems.LoggerReporter(5, streams.value.log),
+    reporter := uncached(new CompileProblems.LoggerReporter(5, streams.value.log)),
     webTarget := target.value / "web",
     (Assets / sourceDirectory) := (Compile / sourceDirectory).value / "assets",
     (TestAssets / sourceDirectory) := (Test / sourceDirectory).value / "assets",
@@ -257,18 +261,23 @@ object SbtWeb extends AutoPlugin {
     (Test / exportedProductsIfMissing) ++= exportAssets(TestAssets, Test, TrackLevel.TrackIfMissing).value,
     (Compile / exportedProductsNoTracking) ++= exportAssets(Assets, Compile, TrackLevel.NoTracking).value,
     (Test / exportedProductsNoTracking) ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
-    (Assets / compile) := Analysis.Empty,
-    (TestAssets / compile) := Analysis.Empty,
-    (TestAssets / compile) := (TestAssets / compile).dependsOn(Assets / compile).value,
-    (TestAssets / test) := (()),
-    (TestAssets / test) := (TestAssets / test).dependsOn(TestAssets / compile).value,
+    (Assets / compile) := uncached(Analysis.Empty),
+    (TestAssets / compile) := uncached(Analysis.Empty),
+    (TestAssets / compile) := uncached{
+      (TestAssets / compile).dependsOn(Assets / compile).value
+    },
+    (TestAssets / test) := Def.task(TestResultPassed)
+      .dependsOn(TestAssets / compile)
+      .value,
     addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
     addWatchSources(unmanagedSources, unmanagedSourceDirectories, TestAssets),
     addWatchSources(unmanagedResources, unmanagedResourceDirectories, Assets),
     addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
-    pipeline := allPipelineStages.value((Assets / mappings).value),
+    pipeline := uncached{
+      allPipelineStages.value((Assets / mappings).value)
+    },
     deduplicators := Nil,
     pipeline := deduplicateMappings(pipeline.value, deduplicators.value, fileConverter.value),
     stagingDirectory := webTarget.value / "stage",
@@ -289,9 +298,11 @@ object SbtWeb extends AutoPlugin {
     managedSourceDirectories := Nil,
     managedSources := sourceGenerators(_.join).map(_.flatten).value,
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
-    unmanagedSources := unmanagedSourceDirectories.value
+    unmanagedSources := uncached{
+      unmanagedSourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get(),
+      .get()
+    },
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
     (sources / mappings) := relativeMappings(sources, sourceDirectories).value,
@@ -299,9 +310,11 @@ object SbtWeb extends AutoPlugin {
     managedResourceDirectories := Nil,
     managedResources := resourceGenerators(_.join).map(_.flatten).value,
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
-    unmanagedResources := unmanagedResourceDirectories.value
+    unmanagedResources := uncached{
+      unmanagedResourceDirectories.value
       .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get(),
+      .get()
+    },
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
     (resources / mappings) := relativeMappings(resources, resourceDirectories).value,
@@ -363,7 +376,7 @@ object SbtWeb extends AutoPlugin {
       unmanagedSourceDirectoriesKey: SettingKey[Seq[File]],
       scopeKey: Configuration
   ) = {
-    Keys.watchSources ++= {
+    Keys.watchSources ++= uncached {
       val include = (scopeKey / unmanagedSourcesKey / Keys.includeFilter).value
       val exclude = (scopeKey / unmanagedSourcesKey / Keys.excludeFilter).value
 
@@ -454,7 +467,7 @@ object SbtWeb extends AutoPlugin {
   def packageAssetsMappings: Def.Initialize[Task[Seq[PathMapping]]] = Def.task {
     implicit val fc: FileConverter = fileConverter.value
     val prefix = packagePrefix.value
-    (Defaults.ConfigGlobal / pipeline).value collect {
+    (Defaults.ConfigZero / pipeline).value collect {
       case (file, path) if fileRefCompatible((file, path)) =>
         file -> (prefix + path)
     }

@@ -22,3 +22,8 @@ project/plugins/project/
 hs_err_pid*
 
 .sdkmanrc
+.bloop
+.metals
+.vscode
+**/.DS_Store
+**/project/metals.sbt
