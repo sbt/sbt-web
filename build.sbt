@@ -11,8 +11,8 @@ developers += Developer(
 
 lazy val scala212 = "2.12.20"
 lazy val scala3 = "3.7.2"
-ThisBuild / crossScalaVersions := Seq(scala212, scala3)
-ThisBuild / scalaVersion := scala3
+ThisBuild / crossScalaVersions := Seq(scala212)
+ThisBuild / scalaVersion := scala212
 
 libraryDependencies ++= Seq(
   "org.webjars" % "webjars-locator-core" % "0.59",
