@@ -8,7 +8,7 @@ import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFileRef }
 import com.typesafe.sbt.web.PathMapping
 
 private[sbt] object PluginCompat:
-  export sbt.CacheImplicits.{*, given}
+  export sbt.CacheImplicits.{ *, given }
   export sbt.util.cacheLevel
   export sbt.Def.uncached
 

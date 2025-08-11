@@ -12,7 +12,7 @@ import com.typesafe.sbt.web.pipeline.Pipeline
 import com.typesafe.sbt.web.incremental.{ OpResult, OpSuccess, toStringInputHasher }
 import xsbti.{ Reporter, FileConverter }
 
-import com.typesafe.sbt.PluginCompat.{*, given}
+import com.typesafe.sbt.PluginCompat.{ *, given }
 
 object Import {
 
@@ -263,10 +263,11 @@ object SbtWeb extends AutoPlugin {
     (Test / exportedProductsNoTracking) ++= exportAssets(TestAssets, Test, TrackLevel.NoTracking).value,
     (Assets / compile) := uncached(Analysis.Empty),
     (TestAssets / compile) := uncached(Analysis.Empty),
-    (TestAssets / compile) := uncached{
+    (TestAssets / compile) := uncached {
       (TestAssets / compile).dependsOn(Assets / compile).value
     },
-    (TestAssets / test) := Def.task(TestResultPassed)
+    (TestAssets / test) := Def
+      .task(TestResultPassed)
       .dependsOn(TestAssets / compile)
       .value,
     addWatchSources(unmanagedSources, unmanagedSourceDirectories, Assets),
@@ -275,7 +276,7 @@ object SbtWeb extends AutoPlugin {
     addWatchSources(unmanagedResources, unmanagedResourceDirectories, TestAssets),
     pipelineStages := Seq.empty,
     allPipelineStages := Pipeline.chain(pipelineStages).value,
-    pipeline := uncached{
+    pipeline := uncached {
       allPipelineStages.value((Assets / mappings).value)
     },
     deduplicators := Nil,
@@ -298,10 +299,10 @@ object SbtWeb extends AutoPlugin {
     managedSourceDirectories := Nil,
     managedSources := sourceGenerators(_.join).map(_.flatten).value,
     unmanagedSourceDirectories := Seq(sourceDirectory.value),
-    unmanagedSources := uncached{
+    unmanagedSources := uncached {
       unmanagedSourceDirectories.value
-      .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get()
+        .descendantsExcept(includeFilter.value, excludeFilter.value)
+        .get()
     },
     sourceDirectories := managedSourceDirectories.value ++ unmanagedSourceDirectories.value,
     sources := managedSources.value ++ unmanagedSources.value,
@@ -310,10 +311,10 @@ object SbtWeb extends AutoPlugin {
     managedResourceDirectories := Nil,
     managedResources := resourceGenerators(_.join).map(_.flatten).value,
     unmanagedResourceDirectories := Seq(resourceDirectory.value),
-    unmanagedResources := uncached{
+    unmanagedResources := uncached {
       unmanagedResourceDirectories.value
-      .descendantsExcept(includeFilter.value, excludeFilter.value)
-      .get()
+        .descendantsExcept(includeFilter.value, excludeFilter.value)
+        .get()
     },
     resourceDirectories := managedResourceDirectories.value ++ unmanagedResourceDirectories.value,
     resources := managedResources.value ++ unmanagedResources.value,
