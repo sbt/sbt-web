@@ -255,6 +255,14 @@ object SbtWeb extends AutoPlugin {
         Nil
       }
     },
+    (Test / packageBin / packageOptions) ++= {
+      if (exportJars.value) Some(Package.ManifestAttributes(ModuleNameAttribute -> moduleName.value))
+      else None
+    },
+    (Compile / packageBin / packageOptions) ++= {
+      if (exportJars.value) Some(Package.ManifestAttributes(ModuleNameAttribute -> moduleName.value))
+      else None
+    },
     (Compile / exportedProducts) ++= exportAssets(Assets, Compile, TrackLevel.TrackAlways).value,
     (Test / exportedProducts) ++= exportAssets(TestAssets, Test, TrackLevel.TrackAlways).value,
     (Compile / exportedProductsIfMissing) ++= exportAssets(Assets, Compile, TrackLevel.TrackIfMissing).value,
@@ -478,8 +486,27 @@ object SbtWeb extends AutoPlugin {
    * Get module names for all internal web module dependencies on the classpath.
    */
   def getInternalWebModules(conf: Configuration): Def.Initialize[Task[Seq[String]]] = Def.task {
-    (conf / internalDependencyClasspath).value.flatMap(_.get(toKey(WebKeys.webModulesLib)))
+    implicit val fc: FileConverter = fileConverter.value
+    (conf / internalDependencyClasspath).value
+      .flatMap { entry =>
+        // First, try attribute (sbt 1.x path when exportJars := false)
+        entry
+          .get(toKey(WebKeys.webModulesLib))
+          .orElse {
+            // Fallback for sbt 2.x where exportJars := true by default and the above attribute is missing.
+            val file = toFile(entry.data)
+            if (file.ext != "jar") None
+            else
+              io.Using.jarFile(verify = false)(file) { jar =>
+                for {
+                  manifest <- Option(jar.getManifest())
+                  moduleName <- Option(manifest.getMainAttributes.getValue(ModuleNameAttribute))
+                } yield moduleName
+              }
+          }
+      }
   }
+  private final val ModuleNameAttribute = "Sbt-Web-Module"
 
   /**
    * Remove web module dependencies from a classpath. This is a helper method for Play 2.3 transitions.
@@ -585,7 +612,7 @@ object SbtWeb extends AutoPlugin {
    * Return the result of the first Some returning function.
    */
   private def firstResult[A, B](fs: Seq[A => Option[B]])(a: A): Option[B] = {
-    (fs.toStream flatMap { f => f(a).toSeq }).headOption
+    fs.view.flatMap(_.apply(a).toSeq).headOption
   }
 
   /**
