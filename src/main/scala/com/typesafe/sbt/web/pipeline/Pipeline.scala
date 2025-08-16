@@ -1,6 +1,6 @@
 package com.typesafe.sbt.web.pipeline
 
-import sbt._
+import sbt.*
 import sbt.Def.Initialize
 import com.typesafe.sbt.web.PathMapping
 

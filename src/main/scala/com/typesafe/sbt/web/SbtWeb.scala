@@ -463,7 +463,7 @@ object SbtWeb extends AutoPlugin {
     }
   }
 
-  def packageSettings: Seq[Setting[_]] = inConfig(Assets)(
+  def packageSettings: Seq[Setting[?]] = inConfig(Assets)(
     Defaults.packageTaskSettings(packageBin, packageAssetsMappings) ++ Seq(
       packagePrefix := "",
       Keys.`package` := packageBin.value

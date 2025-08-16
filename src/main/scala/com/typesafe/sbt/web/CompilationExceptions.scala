@@ -1,7 +1,7 @@
 package com.typesafe.sbt.web
 
-import sbt._
-import xsbti._
+import sbt.*
+import xsbti.*
 import java.util.Optional
 
 object CompileProblems {

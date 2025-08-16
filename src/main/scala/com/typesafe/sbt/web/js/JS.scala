@@ -16,24 +16,24 @@ object JS {
 
   val undefined: JS[JavaScript] = JS(JavaScript("undefined"))
 
-  class Array(seq: Seq[JS[_]]) extends JS[Seq[JS[_]]](seq) {
-    def +(js: JS[_]): Array = new Array(value :+ js)
+  class Array(seq: Seq[JS[?]]) extends JS[Seq[JS[?]]](seq) {
+    def +(js: JS[?]): Array = new Array(value :+ js)
     def ++(other: Array): Array = new Array(value ++ other.value)
   }
 
   object Array {
     val empty: Array = apply()
-    def apply(values: JS[_]*): Array = new Array(values)
+    def apply(values: JS[?]*): Array = new Array(values)
   }
 
-  class Object(map: Map[String, JS[_]]) extends JS[Map[String, JS[_]]](map) {
-    def +(property: (String, JS[_])): Object = new Object(value + property)
+  class Object(map: Map[String, JS[?]]) extends JS[Map[String, JS[?]]](map) {
+    def +(property: (String, JS[?])): Object = new Object(value + property)
     def ++(other: Object): Object = new Object(value ++ other.value)
   }
 
   object Object {
     val empty: Object = apply()
-    def apply(properties: (String, JS[_])*): Object = new Object(properties.toMap)
+    def apply(properties: (String, JS[?])*): Object = new Object(properties.toMap)
   }
 
   def write[A: Write](a: A): String = implicitly[Write[A]].apply(a)
@@ -94,7 +94,7 @@ object JS {
     implicit def map[V: Write]: Write[Map[String, V]] =
       Write[Map[String, V]](m => jsObject(m.map { case (k, v) => (k, write[V](v)) }))
 
-    implicit def js[J <: JS[_]]: Write[J] = Write[J](_.js)
+    implicit def js[J <: JS[?]]: Write[J] = Write[J](_.js)
 
     def quoted(s: String): String = "\"" + (s flatMap escaped) + "\""
 

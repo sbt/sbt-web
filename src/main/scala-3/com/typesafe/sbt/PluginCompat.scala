@@ -1,7 +1,7 @@
 package com.typesafe.sbt
 
-import java.nio.file.{ Path => NioPath }
-import java.io.{ File => IoFile }
+import java.nio.file.Path as NioPath
+import java.io.File as IoFile
 import sbt.*
 import sbt.Keys.Classpath
 import xsbti.{ FileConverter, HashedVirtualFileRef, VirtualFileRef }
