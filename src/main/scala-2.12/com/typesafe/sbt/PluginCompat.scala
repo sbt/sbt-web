@@ -5,7 +5,7 @@ import sbt.Keys.Classpath
 import com.typesafe.sbt.web.PathMapping
 import xsbti.FileConverter
 
-import java.nio.file.{ Path => NioPath }
+import java.nio.file.Path as NioPath
 
 private[sbt] object PluginCompat {
   type FileRef = java.io.File
