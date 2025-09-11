@@ -10,7 +10,7 @@ developers += Developer(
 )
 
 lazy val scala212 = "2.12.20"
-lazy val scala3 = "3.7.2"
+lazy val scala3 = "3.7.3"
 ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 libraryDependencies ++= Seq(
