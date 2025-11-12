@@ -15,7 +15,7 @@ ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 libraryDependencies ++= Seq(
   "org.webjars" % "webjars-locator-core" % "0.59",
-  "org.specs2" %% "specs2-core"          % "4.22.0" % "test",
+  "org.specs2" %% "specs2-core"          % "4.23.0" % "test",
   "junit"       % "junit"                % "4.13.2" % "test"
 )
 
