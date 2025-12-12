@@ -9,7 +9,7 @@ developers += Developer(
   url("https://github.com/playframework")
 )
 
-lazy val scala212 = "2.12.20"
+lazy val scala212 = "2.12.21"
 lazy val scala3 = "3.7.4"
 ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
