@@ -351,12 +351,14 @@ object SbtWeb extends AutoPlugin {
     mappings := allPipelineStages.value(mappings.value),
     deduplicators := Nil,
     mappings := deduplicateMappings(mappings.value, deduplicators.value, fileConverter.value),
-    assets := syncMappings(
-      streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
-      mappings.value,
-      public.value,
-      fileConverter.value
-    ),
+    assets := uncached {
+      syncMappings(
+        streams.value.cacheStoreFactory.make(s"sync-assets-" + configuration.value.name),
+        mappings.value,
+        public.value,
+        fileConverter.value
+      )
+    },
     exportedMappings := createWebJarMappings.value,
     addExportedMappingsToPackageBinMappings := true,
     exportedAssets := syncExportedAssets(TrackLevel.TrackAlways).value,
