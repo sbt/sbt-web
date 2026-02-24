@@ -10,7 +10,7 @@ developers += Developer(
 )
 
 lazy val scala212 = "2.12.21"
-lazy val scala3 = "3.7.4"
+lazy val scala3 = "3.8.2"
 ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 libraryDependencies ++= Seq(
@@ -31,8 +31,8 @@ Global / onLoad := (Global / onLoad).value.andThen { s =>
 
 ThisBuild / (pluginCrossBuild / sbtVersion) := {
   scalaBinaryVersion.value match {
-    case "2.12" => "1.10.2"
-    case _      => "2.0.0-RC6"
+    case "2.12" => "1.12.4"
+    case _      => "2.0.0-RC9"
   }
 }
 
