@@ -40,6 +40,7 @@ object Import {
     )
     val nodeModuleGenerators =
       SettingKey[Seq[Task[Seq[File]]]]("web-node-module-generators", "List of tasks that generate node modules.")
+    @transient
     val nodeModules = TaskKey[Seq[File]]("web-node-modules", "All node module files.")
 
     val webModuleDirectory =
@@ -52,6 +53,7 @@ object Import {
       SettingKey[Seq[Task[Seq[File]]]]("web-module-generators", "List of tasks that generate web browser modules.")
     val webModulesLib =
       SettingKey[String]("web-modules-lib", "The sub folder of the path to extract web browser modules to")
+    @transient
     val webModules = TaskKey[Seq[File]]("web-modules", "All web browser module files.")
 
     val internalWebModules =
@@ -65,18 +67,21 @@ object Import {
 
     val webJarsNodeModulesDirectory =
       SettingKey[File]("web-jars-node-modules-directory", "The path to extract WebJar node modules to")
+    @transient
     val webJarsNodeModules = TaskKey[Seq[File]]("web-jars-node-modules", "Produce the WebJar based node modules.")
 
     val webJarsDirectory = SettingKey[File]("web-jars-directory", "The path to extract WebJars to")
     val webJarsCache = SettingKey[File]("web-jars-cache", "The path for the webjars extraction cache file")
     @cacheLevel(include = Array.empty)
     val webJarsClassLoader = TaskKey[ClassLoader]("web-jars-classloader", "The classloader to extract WebJars from")
+    @transient
     val webJars = TaskKey[Seq[File]]("web-jars", "Produce the WebJars")
 
     @cacheLevel(include = Array.empty)
     val deduplicators =
       TaskKey[Seq[Deduplicator]]("web-deduplicators", "Functions that select from duplicate asset mappings")
 
+    @transient
     val assets = TaskKey[File]("assets", "All of the web assets.")
 
     val exportedMappings =
@@ -86,11 +91,14 @@ object Import {
         "web-add-exportedmappings-to-packagebin-mappings",
         "If exportedMappings should be added to the PackageBin mappings"
       )
+    @transient
     val exportedAssets = TaskKey[File]("web-exported-directory", "Directory with assets in WebJar format.")
+    @transient
     val exportedAssetsIfMissing = TaskKey[File](
       "web-exported-directory-if-missing",
       "Directory with assets in WebJar format, but only when missing from a tracking perspective."
     )
+    @transient
     val exportedAssetsNoTracking = TaskKey[File](
       "web-exported-directory-no-tracking",
       "Directory with assets in WebJar format, but no tracking from a tracking perspective."
@@ -103,6 +111,7 @@ object Import {
 
     val packagePrefix = SettingKey[String]("web-package-prefix", "Path prefix when packaging all assets.")
 
+    @transient
     val stage = TaskKey[File](
       "web-stage",
       "Create a local directory with all the files laid out as they would be in the final distribution."
