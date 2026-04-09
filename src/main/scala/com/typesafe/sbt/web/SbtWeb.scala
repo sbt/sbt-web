@@ -470,7 +470,12 @@ object SbtWeb extends AutoPlugin {
       Seq.empty
     } else {
       implicit val fc: FileConverter = fileConverter.value
-      Seq(Attributed.blank(toFileRef(exportTask.value)).put(toKey(webModulesLib), moduleName.value))
+      val exported = exportTask.value
+      if (exported.exists()) {
+        Seq(Attributed.blank(toFileRef(exported)).put(toKey(webModulesLib), moduleName.value))
+      } else {
+        Seq.empty
+      }
     }
   }
 
