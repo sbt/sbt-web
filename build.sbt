@@ -38,7 +38,7 @@ ThisBuild / (pluginCrossBuild / sbtVersion) := {
 
 scalacOptions := {
   CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, major)) => Seq("-Xsource:3")
+    case Some((2, major)) => Seq("-Xsource:3", "-release:8")
     case _                => Seq.empty
   }
 }
