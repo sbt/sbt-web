@@ -19,8 +19,8 @@ jobs:
     with:
       java: 25, 17, 11, 8
       # Scala 3 build is only supported on Java 17+ in this workflow.
-      exclude: '[{"java": "8", "scala": "3.8.3"}, {"java": "11", "scala": "3.8.3"}]'
-      scala: 2.12.21, 3.8.3
+      exclude: '[{"java": "8", "scala": "3.x"}, {"java": "11", "scala": "3.x"}]'
+      scala: 2.12.x, 3.x
       cmd: |
         sbt ++$MATRIX_SCALA test scripted
 
