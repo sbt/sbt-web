@@ -15,7 +15,7 @@ concurrency:
 jobs:
   tests:
     name: Tests
-    uses: playframework/.github/.github/workflows/cmd.yml@v3
+    uses: playframework/.github/.github/workflows/cmd.yml@v4
     with:
       java: 25, 17, 11, 8
       # Scala 3 build is only supported on Java 17+ in this workflow.
