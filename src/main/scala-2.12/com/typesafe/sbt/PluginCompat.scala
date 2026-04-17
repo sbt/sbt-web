@@ -23,7 +23,7 @@ private[sbt] object PluginCompat {
     cp.map(_.data.toPath()).toVector
   def toFiles(cp: Seq[Attributed[File]])(implicit conv: FileConverter): Vector[File] =
     cp.map(_.data).toVector
-  def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to[Set]
+  def toSet[A](iterable: Iterable[A]): Set[A] = iterable.to(Set)
   def classpathToFiles(classpath: Classpath)(implicit conv: FileConverter): Seq[FileRef] =
     classpath.files
   def toKey(settingKey: SettingKey[String]): AttributeKey[String] = settingKey.key
