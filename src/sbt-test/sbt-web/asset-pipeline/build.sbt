@@ -46,3 +46,7 @@ TaskKey[Unit]("fileCheck") := {
   assert((target.value / "web" / "stage" / "js" / "all.min.js").exists())
   assert((target.value / "web" / "stage" / "coffee" / "a.coffee").exists())
 }
+
+ThisBuild / scalaVersion := {
+  if (sbtVersion.value.startsWith("1.")) "2.12.21" else "3.9.0"
+}

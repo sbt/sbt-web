@@ -33,3 +33,7 @@ TaskKey[Unit]("fileCheckPublic") := {
   assertExists(baseDirectory.value / "extracted" / "public" / "js" / "a.js")
   assertExists(baseDirectory.value / "extracted" / "public" / "lib" / "jquery" / "jquery.js")
 }
+
+ThisBuild / scalaVersion := {
+  if (sbtVersion.value.startsWith("1.")) "2.12.21" else "3.9.0"
+}

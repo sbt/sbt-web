@@ -264,11 +264,12 @@ object SbtWeb extends AutoPlugin {
         Nil
       }
     },
-    (Test / packageBin / packageOptions) ++= {
+    // Also mark sbt 2.1's version-free packageInternal JARs used on dependency classpaths.
+    (Test / packageOptions) ++= {
       if (exportJars.value) Some(Package.ManifestAttributes(ModuleNameAttribute -> moduleName.value))
       else None
     },
-    (Compile / packageBin / packageOptions) ++= {
+    (Compile / packageOptions) ++= {
       if (exportJars.value) Some(Package.ManifestAttributes(ModuleNameAttribute -> moduleName.value))
       else None
     },

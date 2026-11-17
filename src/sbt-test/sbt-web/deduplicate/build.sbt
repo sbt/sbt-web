@@ -8,3 +8,7 @@ TaskKey[Unit]("fileCheck") := {
     "Could not find 'web/public/main/js/a.js'"
   )
 }
+
+ThisBuild / scalaVersion := {
+  if (sbtVersion.value.startsWith("1.")) "2.12.21" else "3.9.0"
+}
