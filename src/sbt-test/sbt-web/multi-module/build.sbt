@@ -148,3 +148,7 @@ TaskKey[Unit]("fileCheckATracked") := {
 TaskKey[Unit]("fileCheckETracked") := {
   assertLibrary(target.value, "e")
 }
+
+ThisBuild / scalaVersion := {
+  if (sbtVersion.value.startsWith("1.")) "2.12.21" else "3.9.0"
+}
